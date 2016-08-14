@@ -123,7 +123,7 @@ void action_matrix::PrintfItself(void)
 * @param  none
 * @retval row
 */
-inline int16_t action_matrix::get_row() const
+int16_t action_matrix::get_row() const
 {
 	return row;
 }
@@ -132,7 +132,7 @@ inline int16_t action_matrix::get_row() const
 * @param  none
 * @retval column
 */
-inline int16_t action_matrix::get_column() const
+int16_t action_matrix::get_column() const
 {
 	return column;
 }
@@ -142,7 +142,7 @@ inline int16_t action_matrix::get_column() const
 * @param  y: 列数
 * @retval data[x][y]
 */
-inline float action_matrix::get_data(int16_t x, int16_t y) const
+float action_matrix::get_data(int16_t x, int16_t y) const
 {
 	return data[x][y];
 }
@@ -152,15 +152,15 @@ inline float action_matrix::get_data(int16_t x, int16_t y) const
 * @param  y: 列数
 * @retval None
 */
-inline void action_matrix::set_data(int16_t x, int16_t y, float val) const
+void action_matrix::set_data(int16_t x, int16_t y, float val) const
 {
 	data[x][y] = val;
 }
-inline void action_matrix::set_erase(void)
+void action_matrix::set_erase(void)
 {
 	erase_flag = 1;
 }
-inline uint8_t action_matrix::get_erase(void) const
+uint8_t action_matrix::get_erase(void) const
 {
 	return erase_flag;
 }
