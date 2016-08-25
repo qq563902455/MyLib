@@ -32,7 +32,7 @@ extern "C"
 #define DiscreteSys 1
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-void input_Order_Model(uint8_t nA, uint8_t nB, uint8_t d);
+void input_Order_Model(uint8_t nA, uint8_t nB, uint8_t d, uint32_t num);
 void input_in_out_data(float in, float out);
 float *getSystem();
 #ifdef __cplusplus
@@ -45,8 +45,8 @@ float *getSystem();
 class control_model
 {
 public:
-	control_model(uint8_t cd, float* Num, float* Den, uint8_t LenN, uint8_t LenD);
-	control_model::control_model(uint8_t cd, uint8_t nA, uint8_t nB, uint8_t nd);
+	control_model(uint8_t cd, float* Num, float* Den, uint8_t LenN, uint8_t  LenD);
+	control_model(uint8_t cd, uint8_t nA, uint8_t nB, uint8_t nd,   uint32_t num_ident);
 	uint8_t getLenNum() const;
 	uint8_t getLenDen() const;
 	float*  getNumP()   const;

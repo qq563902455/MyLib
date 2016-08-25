@@ -31,11 +31,12 @@
 static uint8_t na = 0;
 static uint8_t nb = 0;
 static uint8_t nd = 0;
-static action_matrix *P;
 static action_matrix *ab;
-static action_matrix *K;
+static action_matrix *y;
 static action_matrix *data;
 static float *in_st;
+static uint32_t count_ident = 0;
+static float out_last = 0;
 /* Extern   variables ---------------------------------------------------------*/
 /* Extern   function prototypes -----------------------------------------------*/
 /* Private  function prototypes -----------------------------------------------*/
@@ -52,21 +53,21 @@ static float *in_st;
 		  d : 脉冲传递函数纯滞后
 * @retval none
 */
-void input_Order_Model(uint8_t nA,uint8_t nB,uint8_t d)
+void input_Order_Model(uint8_t nA,uint8_t nB,uint8_t d, uint32_t num)
 {
 	/* 输入系统模型的参数 */
 	na = nA;
-	nb = nB - 1;
+	nb = nB;
 	nd = d;
+	count_ident = 0;
+	out_last = 0;
+
 
 	/* 初始化递归最小二乘法需要的矩阵 */
-	data = new action_matrix(na + nb + 1, 1, MATRIX_ZERO);
-	ab   = new action_matrix(na + nb + 1, 1, MATRIX_ZERO);
-	K    = new action_matrix(na + nb + 1, 1, MATRIX_ZERO);
-	P    = new action_matrix(na + nb + 1, na + nb + 1, MATRIX_I);
+	data = new action_matrix(num, na + nb, MATRIX_ZERO);
+	ab = new action_matrix(na + nb, 1, MATRIX_ZERO);
+	y = new action_matrix(num, 1, MATRIX_ZERO);
 
-	/* 初始化使P矩阵足够大 */
-	(*P) = (*P) * 1000000;
 
 	/* 为系统的纯滞后分配内存，用于存储滞后时间内的系统输入输出数据 */
 	in_st = new float[d];
@@ -84,39 +85,57 @@ void input_Order_Model(uint8_t nA,uint8_t nB,uint8_t d)
 */
 void input_in_out_data(float in, float out)
 {
-	/* 更新系统输入数据 */
-	for (uint8_t i = 0; i < nb - 1; i++)
+	y->set_data(count_ident, 0, out);
+	if (count_ident != 0)
 	{
-		data->set_data(na + i, 0, data->get_data(na + i + 1, 0));
-	}
-	if (nd != 0)
-	{
-		data->set_data(na, 0, in_st[nd - 1]);
-		memcpy(in_st + 1, in_st, (nd - 1) * 4);
-		in_st[0] = in;
+		/* 更新系统输入数据 */
+		for (uint8_t i = 0; i < nb - 1; i++)
+		{
+			data->set_data(count_ident, na + nb - 1 - i, data->get_data(count_ident - 1, na + nb - i - 2));
+		}
+		if (nd != 0)
+		{
+			data->set_data(count_ident, na, in_st[nd - 1]);
+			memcpy(in_st + 1, in_st, (nd - 1) * 4);
+			in_st[0] = in;
+		}
+		else
+		{
+			data->set_data(count_ident, na, in);
+		}
+		/* 更新系统输出数据 */
+		for (uint8_t i = 0; i < na - 1; i++)
+		{
+			data->set_data(count_ident, na - i - 1, data->get_data(count_ident - 1, na - i - 2));
+		}
+		data->set_data(count_ident, 0, -out_last);
 	}
 	else
 	{
-		data->set_data(na, 0, in);
+		/* 更新系统输入数据 */
+		for (uint8_t i = 0; i < nb - 1; i++)
+		{
+			data->set_data(count_ident, na + nb - 1 - i,0);
+		}
+		if (nd != 0)
+		{
+			data->set_data(na, 0, in_st[nd - 1]);
+			memcpy(in_st + 1, in_st, (nd - 1) * 4);
+			in_st[0] = in;
+		}
+		else
+		{
+			data->set_data(count_ident, na, in);
+		}
+		/* 更新系统输出数据 */
+		for (uint8_t i = 0; i < na - 1; i++)
+		{
+			data->set_data(count_ident, na - i - 1, 0);
+		}
+		data->set_data(count_ident, 0, -out_last);
 	}
-
-	/* 计算K */
-	(*K)  = ((*P)*(*data)) * (~(1 + (!(*data))*(*P)*(*data)));
-
-	/* 计算递归结果，即a,b的值 */
-	(*ab) = (*ab) + (*K)*(out - (!(*data))*(*ab));
-	//(*ab).PrintfItself();
-
-
-	/* 更新P矩阵 */
-	(*P) = (1 - (*K)*(!(*data)))*(*P);
-
-    /* 更新系统输出数据 */
-	for (uint8_t i = 0; i < na - 1; i++)
-	{
-		data->set_data(i, 0, data->get_data(i + 1, 0));
-	}
-	data->set_data(0, 0, -out);
+	out_last = out;
+	count_ident++;
 }
 /**
   * @brief  获得辨识的结果
@@ -127,23 +146,24 @@ float *getSystem()
 {
 	/* 将辨识结果转移到数组中 */
 	float *result = new float[(*ab).get_row()];
-	for (uint8_t i = 0; i < (*ab).get_row(); i++)
+
+	(*ab) = (~(!(*data)*(*data)))*(!(*data))*(*y);
+
+	for (uint32_t i = 0; i < (*ab).get_row(); i++)
 	{
-		result[i] = (*ab).get_data(i, 0);
+		result[i] = (float)(*ab).get_data(i, 0);
 	}
 
 	/* 释放矩阵中的数据 */
-	(*P).delete_data();
 	(*ab).delete_data();
-	(*K).delete_data();
 	(*data).delete_data();
+	(*y).delete_data();
 
 	/* 释放矩阵以及纯滞后需要的数据 */
     delete[] in_st;
-    delete  P;
 	delete  ab;
-	delete  K;
 	delete  data;
+	delete  y;
 
 	return result;
 }
@@ -190,7 +210,7 @@ control_model::control_model(uint8_t cd, float* num, float* den, uint8_t LenN, u
           nd: 脉冲传递函数纯滞后
 * @retval none
 */
-control_model::control_model(uint8_t cd, uint8_t nA, uint8_t nB, uint8_t nd)
+control_model::control_model(uint8_t cd, uint8_t nA, uint8_t nB, uint8_t nd, uint32_t num_ident)
 { 
 	d_or_c = cd;
 	if (nA - nB + 1 - nd>0)
@@ -206,7 +226,7 @@ control_model::control_model(uint8_t cd, uint8_t nA, uint8_t nB, uint8_t nd)
 
 	Num = new float[len_num];
 	Den = new float[len_den];
-	input_Order_Model(nA, nB, nd);
+	input_Order_Model(nA, nB, nd, num_ident);
 }
 /**
 * @brief   析构函数，释放前面申请的动态内存

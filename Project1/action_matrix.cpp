@@ -37,23 +37,23 @@ using namespace std;
 * @param  len2: 矩阵的列数
 * @retval None
 */
-action_matrix::action_matrix(int16_t len1, int16_t len2)
+action_matrix::action_matrix(uint32_t len1, uint32_t len2)
 {
-	data = new float *[len1];
+	data = new double *[len1];
 	for (int i = 0; i < len1; i++)
 	{
-		data[i] = new float[len2];
+		data[i] = new double[len2];
 	}
 	row = len1;
 	column = len2;
 	erase_flag = 0;
 }
-action_matrix::action_matrix(int16_t len1, int16_t len2, uint8_t kind)
+action_matrix::action_matrix(uint32_t len1, uint32_t len2, uint8_t kind)
 {
-	data = new float *[len1];
-	for (int i = 0; i < len1; i++)
+	data = new double *[len1];
+	for (uint32_t i = 0; i < len1; i++)
 	{
-		data[i] = new float[len2];
+		data[i] = new double[len2];
 	}
 	row = len1;
 	column = len2;
@@ -62,7 +62,7 @@ action_matrix::action_matrix(int16_t len1, int16_t len2, uint8_t kind)
 	switch (kind)
 	{
 	case MATRIX_I:
-		for (uint8_t i = 0; i < len1; i++)
+		for (uint32_t i = 0; i < len1; i++)
 			for (uint8_t j = 0; j < len2; j++)
 			{
 				if (i != j)
@@ -72,15 +72,15 @@ action_matrix::action_matrix(int16_t len1, int16_t len2, uint8_t kind)
 			}
 		break;
 	case MATRIX_ZERO:
-		for (uint8_t i = 0; i < len1; i++)
-			for (uint8_t j = 0; j < len2; j++)
+		for (uint32_t i = 0; i < len1; i++)
+			for (uint32_t j = 0; j < len2; j++)
 			{
 				data[i][j] = 0;
 			}
 		break;
 	case MATRIX_ALL_I:
-		for (uint8_t i = 0; i < len1; i++)
-			for (uint8_t j = 0; j < len2; j++)
+		for (uint32_t i = 0; i < len1; i++)
+			for (uint32_t j = 0; j < len2; j++)
 			{
 				data[i][j] = 1;
 			}
@@ -97,7 +97,7 @@ action_matrix::action_matrix(int16_t len1, int16_t len2, uint8_t kind)
 */
 void action_matrix::delete_data(void)
 {
-	for (int i = 0; i < row; i++)
+	for (uint32_t i = 0; i < row; i++)
 	{
 		delete[] data[i];
 	}
@@ -105,11 +105,11 @@ void action_matrix::delete_data(void)
 }
 void action_matrix::PrintfItself(void)
 {
-	for (int i = 0; i<row; i++)
+	for (uint32_t i = 0; i<row; i++)
 	{
 		//USART_OUT(USART3, "\r\n");
 		cout << endl;
-		for (int j = 0; j<column; j++)
+		for (uint32_t j = 0; j<column; j++)
 		{
 			//USART_OUT(USART3, "%d ", (int)(data[i][j] * 1000));
 			cout << data[i][j]<<' ';
@@ -123,7 +123,7 @@ void action_matrix::PrintfItself(void)
 * @param  none
 * @retval row
 */
-int16_t action_matrix::get_row() const
+uint32_t action_matrix::get_row() const
 {
 	return row;
 }
@@ -132,7 +132,7 @@ int16_t action_matrix::get_row() const
 * @param  none
 * @retval column
 */
-int16_t action_matrix::get_column() const
+uint32_t action_matrix::get_column() const
 {
 	return column;
 }
@@ -142,7 +142,7 @@ int16_t action_matrix::get_column() const
 * @param  y: 列数
 * @retval data[x][y]
 */
-float action_matrix::get_data(int16_t x, int16_t y) const
+double action_matrix::get_data(uint32_t x, uint32_t y) const
 {
 	return data[x][y];
 }
@@ -152,7 +152,7 @@ float action_matrix::get_data(int16_t x, int16_t y) const
 * @param  y: 列数
 * @retval None
 */
-void action_matrix::set_data(int16_t x, int16_t y, float val) const
+void action_matrix::set_data(uint32_t x, uint32_t y, double val) const
 {
 	data[x][y] = val;
 }
@@ -219,7 +219,7 @@ action_matrix operator + (action_matrix x, action_matrix y)
 		return result;
 	}
 }
-action_matrix operator+(action_matrix x, float y)
+action_matrix operator+(action_matrix x, double y)
 {
 
 	if (x.get_row() != x.get_column())
@@ -245,7 +245,7 @@ action_matrix operator+(action_matrix x, float y)
 		return result;
 	}
 }
-action_matrix operator+(float x, action_matrix y)
+action_matrix operator+(double x, action_matrix y)
 {
 	if (y.get_row() != y.get_column())
 	{
@@ -299,11 +299,11 @@ action_matrix operator - (action_matrix x, action_matrix y)
 		return result;
 	}
 }
-action_matrix operator - (action_matrix x, float y)
+action_matrix operator - (action_matrix x, double y)
 {
 	return x + (-y);
 }
-action_matrix operator - (float x, action_matrix y)
+action_matrix operator - (double x, action_matrix y)
 {
 	if (y.get_row() != y.get_column())
 	{
@@ -342,7 +342,7 @@ action_matrix operator * (action_matrix x, action_matrix y)
 	else
 	{
 		action_matrix result(x.get_row(), y.get_column());
-		float temp = 0;
+		double temp = 0;
 		for (int i = 0; i < x.get_row(); i++)
 			for (int j = 0; j < y.get_column(); j++)
 			{
@@ -361,7 +361,7 @@ action_matrix operator * (action_matrix x, action_matrix y)
 		return result;
 	}
 }
-action_matrix operator * (action_matrix x, float y)
+action_matrix operator * (action_matrix x, double y)
 {
 
 	action_matrix result(x.get_row(), x.get_column());
@@ -375,7 +375,7 @@ action_matrix operator * (action_matrix x, float y)
 	result.set_erase();
 	return result;
 }
-action_matrix operator * (float x, action_matrix y)
+action_matrix operator * (double x, action_matrix y)
 {
 
 	action_matrix result(y.get_row(), y.get_column());
@@ -390,7 +390,7 @@ action_matrix operator * (float x, action_matrix y)
 	return result;
 }
 
-action_matrix operator / (action_matrix x, float y)
+action_matrix operator / (action_matrix x, double y)
 {
 	action_matrix result(x.get_row(), x.get_column());
 	for (int i = 0; i < x.get_row(); i++)
@@ -440,8 +440,8 @@ action_matrix operator ~(action_matrix x) //矩阵求逆
 	action_matrix matrix_L_Inverse(x.get_column(), x.get_column());
 	action_matrix matrix_U_Inverse(x.get_column(), x.get_column());
 	action_matrix result(x.get_column(), x.get_column());
-	float temp_val = 0;
-	float temp_val2 = 0;
+	double temp_val = 0;
+	double temp_val2 = 0;
 	for (int i = 0; i < x.get_row(); i++)
 	{
 		for (int j = i; j < x.get_row(); j++)
@@ -531,9 +531,9 @@ action_matrix operator ~(action_matrix x) //矩阵求逆
 	result.set_erase();
 	return result;
 }
-float operator *(action_matrix x)
+double operator *(action_matrix x)
 {
-	float out=0;
+	double out=0;
 	if (x.get_row()>2)
 	{
 		action_matrix *data;

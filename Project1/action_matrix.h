@@ -38,19 +38,19 @@ enum {
 class action_matrix
 {
 private:
-	int16_t  row;
-	int16_t  column;
-	float **data;
+	uint32_t  row;
+	uint32_t  column;
+	double **data;
 	uint8_t erase_flag;
 public:
-	action_matrix(int16_t len1, int16_t len2);
-	action_matrix(int16_t len1, int16_t len2, uint8_t kind);
+	action_matrix(uint32_t len1, uint32_t len2);
+	action_matrix(uint32_t len1, uint32_t len2, uint8_t kind);
 
 	void delete_data(void);
-	int16_t get_row() const;
-	int16_t get_column() const;
-	float get_data(int16_t x, int16_t y) const;
-	void set_data(int16_t x, int16_t y, float val) const;
+	uint32_t get_row() const;
+	uint32_t get_column() const;
+	double get_data(uint32_t x, uint32_t y) const;
+	void set_data(uint32_t x, uint32_t y, double val) const;
 	void set_erase(void);
 	uint8_t get_erase(void) const;
 	void PrintfItself(void);
@@ -61,18 +61,18 @@ action_matrix operator + (action_matrix x, action_matrix y);
 action_matrix operator - (action_matrix x, action_matrix y);
 action_matrix operator * (action_matrix x, action_matrix y);
 
-action_matrix operator * (action_matrix x, float y);
-action_matrix operator * (float x, action_matrix y);
-action_matrix operator + (action_matrix x, float y);
-action_matrix operator + (float x, action_matrix y);
-action_matrix operator - (action_matrix x, float y);
-action_matrix operator - (float x, action_matrix y);
+action_matrix operator * (action_matrix x, double y);
+action_matrix operator * (double x, action_matrix y);
+action_matrix operator + (action_matrix x, double y);
+action_matrix operator + (double x, action_matrix y);
+action_matrix operator - (action_matrix x, double y);
+action_matrix operator - (double x, action_matrix y);
 
-action_matrix operator / (action_matrix x, float y);
+action_matrix operator / (action_matrix x, double y);
 
 action_matrix operator ! (action_matrix x);
 action_matrix operator ~ (action_matrix x);
-float operator * (action_matrix x);
+double operator * (action_matrix x);
 #endif
 
 /******************* (C) COPYRIGHT 2015 ACTION *****END OF FILE****/
