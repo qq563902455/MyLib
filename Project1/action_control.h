@@ -30,6 +30,10 @@ extern "C"
 /* Exported constants --------------------------------------------------------*/
 #define ContinueSys 0
 #define DiscreteSys 1
+
+#define CLEARSTEP   0
+#define STEPING     1
+
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 void input_Order_Model(uint8_t nA, uint8_t nB, uint8_t d, uint32_t num);
@@ -54,6 +58,7 @@ public:
 	uint8_t getCD()     const;
 	void model_iddata(float in,float out) const;
 	void model_ident(void);
+	float step(float in, uint8_t cmd) const;
 	~control_model();
 private:
 	uint8_t len_num;

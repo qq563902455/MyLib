@@ -30,12 +30,16 @@ public:
 	float Kp = 0;
 	float Ki = 0;
 	float Kd = 0;
+	float err_sum_max = 9999999999.0f;
+	float out_max = 100.0f;
 	float out(float err);
-	void autoTuning(control_model &g, float wc, float rwc, float T);
+	void  autoTuning(control_model &g, float wc, float rwc, float T);
+	float getfeedback(control_model &g, float in, uint8_t cmd);
+	void  OptTuning(control_model &g, float wc, float T, float test_in);
+	void  OptTuning(control_model &g, float T, float test_in);
 private:
 	float err_sum = 0;
 	float last_err = 0;
-	float err_sum_max = 50;
 };
 /* Exported overload ------------------------------------------------------- */
 #endif

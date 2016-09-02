@@ -5,28 +5,20 @@
 #include "action_PID.h"
 using namespace std;
 
-control_model g(0,2,3,0,10000); //后面的10000代表要输入10000个数据
-action_PID pi;
+float num[] = { 0.00625725f,0.0166207f};
+float den[] = { 1.0f,-0.792979f,-0.207224f };
+
+control_model g(0, num, den, 2, 3);
 int main(void)
 {
-	for (int i = 1; i <= 10000; i++)
-	{
-		g.model_iddata(i+1/(float)i, i+i-1);
-	}
-	g.model_ident();
+	action_PID pi;
+	pi.out_max = 500;
 
+	/*  这个函数你就直接按下面给就OK了 */
+	pi.OptTuning(g,0.001f, 100);
 
-	for (uint8_t i = 0; i < 8; i++)
-	{
-		cout << g.getNumP()[i] << endl;
-		cout << g.getDenP()[i] << endl;
-		cout << endl;
-	}
-
-	pi.autoTuning(g, 1, 60, 0.0005f);
-
-	cout << pi.Kp << endl;
-	cout << pi.Ki << endl;
+	cout << "Kp " << pi.Kp << endl;
+	cout << "Ki " << pi.Ki << endl;
 
 	while (1);
 }

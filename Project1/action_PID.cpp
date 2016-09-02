@@ -40,6 +40,8 @@
 float action_PID::out(float err)
 {
 	float err_vell=0;
+	float out;
+
 	err_sum += err;
 	err_vell = err - last_err;
 	last_err = err;
@@ -52,8 +54,18 @@ float action_PID::out(float err)
 	{
 		err_sum = -err_sum_max / Ki;
 	}
+	out = Kp*err + Ki*err_sum + Kd*err_vell;
 
-	return (Kp*err+Ki*err_sum+Kd*err_vell);
+	if (out > out_max)
+	{
+		out = out_max;
+	}
+	else if (out < -1 * out_max)
+	{
+		out = -1 * out_max;
+	}
+
+	return out;
 }
 /**
 * @brief  PI控制器自整定
@@ -113,6 +125,107 @@ void action_PID::autoTuning(control_model &g, float wc, float rwc,float T)
 
 	Ki = (float)(sin(ph_pi) / A_g / temp_A / sin(temp_ph));  //得到最后的Ki
 	Kp = (float)(Ki / Rate_pi);                              //得到最后的Kp
-	Kd = 0.0f;         
+	Kd = 0.0f;
+
+	Ki *= T;
+}
+/**
+  * @brief  获得控制器的仿真结果
+  * @param  g:   被控对象
+            in:  仿真输入
+			cmd: STEPING:    正常仿真
+			     CLEARSTEP:  清楚仿真的历史信息
+  * @retval out: 对应仿真输入的仿真输出
+  */
+float action_PID::getfeedback(control_model &g, float in, uint8_t cmd)
+{
+	static float out = 0;
+	float pid_out;
+	if (cmd == STEPING)
+	{
+		pid_out = this->out(in - out);
+		out = g.step(pid_out, STEPING);
+	}
+	else if (cmd == CLEARSTEP)
+	{
+		out = 0;
+		err_sum = 0;
+		last_err = 0;
+		g.step(0, CLEARSTEP);
+	}
+	return out;
+}
+void action_PID::OptTuning(control_model &g, float wc, float T, float test_in)
+{
+	float result[1000];
+	for (uint16_t i = 0; i < 1000; i++)
+	{
+		this->autoTuning(g, wc, 10 + 170.0f / 1000.0f*i, T);
+		result[i] = 0;
+		for (uint32_t j = 0; j < 1000; j++)
+		{
+			result[i] += (float)fabs(test_in - this->getfeedback(g, test_in, STEPING));
+
+			if (this->Kp < 0 || this->Ki < 0)
+			{
+				result[i] = -1;
+				break;
+			}
+		}
+		this->getfeedback(g, test_in, CLEARSTEP);
+	}
+
+	for (uint16_t i = 0; i < 1000; i++)
+	{
+		uint16_t count = 0;
+		for (uint16_t j = 0; j < 1000; j++)
+		{
+			if (fabs(result[i] + 1) < 0.01)
+			{
+				break;
+			}
+			if (result[i] <= result[j]|| fabs(result[j] + 1) < 0.01)
+			{
+				count++;
+			}
+		}
+		if (count >= 1000)
+		{
+			this->autoTuning(g, wc, 10 + 170.0f / 1000.0f*i, T);
+			break;
+		}
+			
+	}
+}
+void action_PID::OptTuning(control_model &g, float T, float test_in)
+{
+	float result[1000];
+	for (uint16_t i = 0; i < 1000; i++)
+	{
+		this->OptTuning(g, 0.5f+i*0.5f, T, test_in);
+		result[i] = 0;
+		for (uint32_t j = 0; j < 1000; j++)
+		{
+			result[i] += (float)fabs(test_in - this->getfeedback(g, test_in, STEPING));
+		}
+		this->getfeedback(g, test_in, CLEARSTEP);
+	}
+	for (uint16_t i = 0; i < 1000; i++)
+	{
+		uint16_t count = 0;
+		for (uint16_t j = 0; j < 1000; j++)
+		{
+			if (result[i] <= result[j])
+			{
+				count++;
+			}
+		}
+		if (count >= 1000)
+		{
+			this->OptTuning(g, 0.5f + i*0.5f, T, test_in);
+			break;
+		}
+
+	}
 }
 /************************ (C) COPYRIGHT 2016 ACTION *****END OF FILE****/

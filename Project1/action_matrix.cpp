@@ -40,7 +40,7 @@ using namespace std;
 action_matrix::action_matrix(uint32_t len1, uint32_t len2)
 {
 	data = new double *[len1];
-	for (int i = 0; i < len1; i++)
+	for (uint32_t i = 0; i < len1; i++)
 	{
 		data[i] = new double[len2];
 	}
@@ -178,9 +178,9 @@ void action_matrix::operator = (action_matrix y)
 	}
 	this->row = y.get_row();
 	this->column = y.get_column();
-	for (int i = 0; i < this->row; i++)
+	for (uint32_t i = 0; i < this->row; i++)
 	{
-		for (int j = 0; j < this->column; j++)
+		for (uint32_t j = 0; j < this->column; j++)
 		{
 			this->data[i][j] = y.get_data(i, j);
 		}
@@ -204,9 +204,9 @@ action_matrix operator + (action_matrix x, action_matrix y)
 	else
 	{
 		action_matrix result(x.get_row(), x.get_column());
-		for (int i = 0; i < x.get_row(); i++)
+		for (uint32_t i = 0; i < x.get_row(); i++)
 		{
-			for (int j = 0; j < x.get_column(); j++)
+			for (uint32_t j = 0; j < x.get_column(); j++)
 			{
 				result.set_data(i, j, x.get_data(i, j) + y.get_data(i, j));
 			}
@@ -229,9 +229,9 @@ action_matrix operator+(action_matrix x, double y)
 	else
 	{
 		action_matrix result(x.get_row(), x.get_column());
-		for (int i = 0; i < x.get_row(); i++)
+		for (uint32_t i = 0; i < x.get_row(); i++)
 		{
-			for (int j = 0; j < x.get_column(); j++)
+			for (uint32_t j = 0; j < x.get_column(); j++)
 			{
 				if(i==j)
 				  result.set_data(i, j, x.get_data(i, j) + y);
@@ -254,9 +254,9 @@ action_matrix operator+(double x, action_matrix y)
 	else
 	{
 		action_matrix result(y.get_row(), y.get_column());
-		for (int i = 0; i < y.get_row(); i++)
+		for (uint32_t i = 0; i < y.get_row(); i++)
 		{
-			for (int j = 0; j < y.get_column(); j++)
+			for (uint32_t j = 0; j < y.get_column(); j++)
 			{
 				if (i == j)
 					result.set_data(i, j, y.get_data(i, j) + x);
@@ -284,9 +284,9 @@ action_matrix operator - (action_matrix x, action_matrix y)
 	else
 	{
 		action_matrix result(x.get_row(), x.get_column());
-		for (int i = 0; i < x.get_row(); i++)
+		for (uint32_t i = 0; i < x.get_row(); i++)
 		{
-			for (int j = 0; j < x.get_column(); j++)
+			for (uint32_t j = 0; j < x.get_column(); j++)
 			{
 				result.set_data(i, j, x.get_data(i, j) - y.get_data(i, j));
 			}
@@ -312,9 +312,9 @@ action_matrix operator - (double x, action_matrix y)
 	else
 	{
 		action_matrix result(y.get_row(), y.get_column());
-		for (int i = 0; i < y.get_row(); i++)
+		for (uint32_t i = 0; i < y.get_row(); i++)
 		{
-			for (int j = 0; j < y.get_column(); j++)
+			for (uint32_t j = 0; j < y.get_column(); j++)
 			{
 				if (i == j)
 					result.set_data(i, j, x - y.get_data(i, j));
@@ -343,11 +343,11 @@ action_matrix operator * (action_matrix x, action_matrix y)
 	{
 		action_matrix result(x.get_row(), y.get_column());
 		double temp = 0;
-		for (int i = 0; i < x.get_row(); i++)
-			for (int j = 0; j < y.get_column(); j++)
+		for (uint32_t i = 0; i < x.get_row(); i++)
+			for (uint32_t j = 0; j < y.get_column(); j++)
 			{
 				temp = 0;
-				for (int w = 0; w < x.get_column(); w++)
+				for (uint32_t w = 0; w < x.get_column(); w++)
 				{
 					temp = temp + x.get_data(i, w)*y.get_data(w, j);
 				}
@@ -365,8 +365,8 @@ action_matrix operator * (action_matrix x, double y)
 {
 
 	action_matrix result(x.get_row(), x.get_column());
-	for (int i = 0; i < x.get_row(); i++)
-		for (int j = 0; j < x.get_column(); j++)
+	for (uint32_t i = 0; i < x.get_row(); i++)
+		for (uint32_t j = 0; j < x.get_column(); j++)
 		{
 			result.set_data(i, j, x.get_data(i, j)*y);
 		}
@@ -379,8 +379,8 @@ action_matrix operator * (double x, action_matrix y)
 {
 
 	action_matrix result(y.get_row(), y.get_column());
-	for (int i = 0; i < y.get_row(); i++)
-		for (int j = 0; j < y.get_column(); j++)
+	for (uint32_t i = 0; i < y.get_row(); i++)
+		for (uint32_t j = 0; j < y.get_column(); j++)
 		{
 			result.set_data(i, j, y.get_data(i, j)*x);
 		}
@@ -393,8 +393,8 @@ action_matrix operator * (double x, action_matrix y)
 action_matrix operator / (action_matrix x, double y)
 {
 	action_matrix result(x.get_row(), x.get_column());
-	for (int i = 0; i < x.get_row(); i++)
-		for (int j = 0; j < x.get_column(); j++)
+	for (uint32_t i = 0; i < x.get_row(); i++)
+		for (uint32_t j = 0; j < x.get_column(); j++)
 		{
 			result.set_data(i, j, x.get_data(i, j) / y);
 		}
@@ -411,9 +411,9 @@ action_matrix operator / (action_matrix x, double y)
 action_matrix operator !(action_matrix x) //¾ØÕóµÄ×ªÖÃ
 {
 	action_matrix result(x.get_column(), x.get_row());
-	for (int i = 0; i < x.get_row(); i++)
+	for (uint32_t i = 0; i < x.get_row(); i++)
 	{
-		for (int j = 0; j < x.get_column(); j++)
+		for (uint32_t j = 0; j < x.get_column(); j++)
 		{
 			result.set_data(j, i, x.get_data(i, j));
 		}
@@ -442,9 +442,9 @@ action_matrix operator ~(action_matrix x) //¾ØÕóÇóÄæ
 	action_matrix result(x.get_column(), x.get_column());
 	double temp_val = 0;
 	double temp_val2 = 0;
-	for (int i = 0; i < x.get_row(); i++)
+	for (uint32_t i = 0; i < x.get_row(); i++)
 	{
-		for (int j = i; j < x.get_row(); j++)
+		for (uint32_t j = i; j < x.get_row(); j++)
 		{
 			if (j == i)
 			{
@@ -457,9 +457,9 @@ action_matrix operator ~(action_matrix x) //¾ØÕóÇóÄæ
 			}
 		}
 	}
-	for (int i = 0; i < x.get_row(); i++)
+	for (uint32_t i = 0; i < x.get_row(); i++)
 	{
-		for (int j = 0; j < x.get_row(); j++)
+		for (uint32_t j = 0; j < x.get_row(); j++)
 		{
 			matrix_L_Inverse.set_data(i, j, 0);
 			matrix_U_Inverse.set_data(i, j, 0);
@@ -467,26 +467,26 @@ action_matrix operator ~(action_matrix x) //¾ØÕóÇóÄæ
 	}
 
 	/* LU·Ö½â */
-	for (int i = 0; i < x.get_row(); i++)
+	for (uint32_t i = 0; i < x.get_row(); i++)
 	{
 		matrix_U.set_data(0, i, x.get_data(0, i));
 		matrix_L.set_data(i, 0, x.get_data(i, 0) / matrix_U.get_data(0, 0));
 	}
-	for (int i = 1; i < x.get_row(); i++)
+	for (uint32_t i = 1; i < x.get_row(); i++)
 	{
-		for (int j = i; j < x.get_row(); j++)
+		for (uint32_t j = i; j < x.get_row(); j++)
 		{
 			temp_val = 0;
-			for (int w = 0; w <= i - 1; w++)
+			for (uint32_t w = 0; w <= i - 1; w++)
 			{
 				temp_val = temp_val + matrix_L.get_data(i, w)*matrix_U.get_data(w, j);
 			}
 			matrix_U.set_data(i, j, x.get_data(i, j) - temp_val);
 		}
-		for (int j = i + 1; j < x.get_row(); j++)
+		for (uint32_t j = i + 1; j < x.get_row(); j++)
 		{
 			temp_val = 0;
-			for (int w = 0; w <= i - 1; w++)
+			for (uint32_t w = 0; w <= i - 1; w++)
 			{
 				temp_val = temp_val + matrix_L.get_data(j, w)*matrix_U.get_data(w, i);
 			}
@@ -496,13 +496,13 @@ action_matrix operator ~(action_matrix x) //¾ØÕóÇóÄæ
 	matrix_L = !matrix_L;
 	temp_val = 0;
 	temp_val2 = 0;
-	for (int j = x.get_column() - 1; j >= 0; j--)
+	for (uint32_t j = x.get_column() - 1; j >= 0; j--)
 	{
-		for (int i = x.get_column() - 1; i >= 0; i--)
+		for (uint32_t i = x.get_column() - 1; i >= 0; i--)
 		{
 			temp_val = 0;
 			temp_val2 = 0;
-			for (int w = x.get_column() - 1; w > i; w--)
+			for (uint32_t w = x.get_column() - 1; w > i; w--)
 			{
 				temp_val = temp_val + matrix_U.get_data(i, w)*matrix_U_Inverse.get_data(w, j);
 				temp_val2 = temp_val2 + matrix_L.get_data(i, w)*matrix_L_Inverse.get_data(w, j);

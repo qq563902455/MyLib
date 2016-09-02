@@ -37,6 +37,9 @@ static action_matrix *data;
 static float *in_st;
 static uint32_t count_ident = 0;
 static float out_last = 0;
+
+static float *out_simu;
+static float *in_simu;
 /* Extern   variables ---------------------------------------------------------*/
 /* Extern   function prototypes -----------------------------------------------*/
 /* Private  function prototypes -----------------------------------------------*/
@@ -179,7 +182,7 @@ float *getSystem()
 * @param 		num： 传递函数分子数组的指针
 * @param 	    den： 传递函数分母数组的指针
 * @param 		LenN: 传递函数分子数组的长度
-* @param 		LenD: 传递杉树分母数组的长度
+* @param 		LenD: 传递函数分母数组的长度
 * @retval none
 */
 control_model::control_model(uint8_t cd, float* num, float* den, uint8_t LenN, uint8_t LenD)
@@ -236,6 +239,8 @@ control_model::~control_model()
 {
 	delete[] Num;
 	delete[] Den;
+	delete[] out_simu;
+	delete[] in_simu;
 }
 /**
 * @brief   得到模型分子数组的长度
@@ -331,5 +336,53 @@ void control_model::model_ident(void)
 		}
 	}
 }
+float control_model::step(float in, uint8_t cmd) const
+{
+	static uint8_t flag = 0;
+	float out = 0;
+	if (cmd == CLEARSTEP)
+	{
+		delete[] out_simu;
+		delete[] in_simu;
+		flag = 0;
+	}
+	else if (cmd == STEPING)
+	{
+		if (flag == 0)
+		{
+			out_simu = new float[len_den - 1];
+			in_simu = new float[len_den];
 
+			for (uint8_t i = 0; i < len_den; i++)
+			{
+				if (i < len_den - 1)
+				{
+					out_simu[i] = 0;
+				}
+				in_simu[i] = 0;
+			}
+			flag++;
+		}
+
+		memcpy(in_simu, in_simu + 1, 4 * (len_den - 1));
+		in_simu[len_den - 1] = in;
+
+		for (uint8_t i = 0; i < len_num; i++)
+		{
+			out += in_simu[len_num - 1 - i] * Num[i];
+		}
+		if (len_den > 1)
+		{
+			for (uint8_t i = 1; i < len_den; i++)
+			{
+				out -= out_simu[len_den - i - 1] * Den[i];
+			}
+			memcpy(out_simu, out_simu + 1, 4 * (len_den - 2));
+			out_simu[len_den - 2] = out;
+		}
+
+		out /= Den[0];
+	}
+	return out;
+}
 /************************ (C) COPYRIGHT 2016 ACTION *****END OF FILE****/

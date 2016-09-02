@@ -84,8 +84,8 @@ float **BasicFittingCal(void)
 
 	for (uint8_t i = 0; i<result.get_row(); i++)
 	{
-		for (uint8_t j = 0; j<3; j++)
-			re[i][j] = result.get_data(i, j);
+		for (uint8_t j = 0; j < 3; j++)
+			re[i][j] = (float)result.get_data(i, j);
 	}
 	result.delete_data();
 	return re;
