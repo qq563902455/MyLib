@@ -31,6 +31,33 @@ using namespace std;
 /* Private  functions ---------------------------------------------------------*/
 /* Exported function prototypes -----------------------------------------------*/
 /* Exported class functions ---------------------------------------------------*/
+
+action_matrix::action_matrix()
+{
+	row = column = 0;
+	refcount = nullptr;
+	_size = 0;
+}
+
+// 矩阵内存分配应该都调用这个函数
+void action_matrix::create(uint32_t len1, uint32_t len2)
+{
+	row = len1;
+	column = len2;
+	_size = len1 * len2;
+
+	release();
+
+	// 分配内存
+	data = new double *[len1];
+	for (uint32_t i = 0; i < len1; i++){
+		data[i] = new double[len2];
+	}
+	
+	refcount = new int(1);
+}
+
+
 /**
 * @brief        矩阵构造函数
 * @param  len1: 矩阵的行数
@@ -39,25 +66,25 @@ using namespace std;
 */
 action_matrix::action_matrix(uint32_t len1, uint32_t len2)
 {
-	data = new double *[len1];
-	for (uint32_t i = 0; i < len1; i++)
-	{
-		data[i] = new double[len2];
-	}
-	row = len1;
-	column = len2;
-	erase_flag = 0;
+	_log_("matrix construct.");
+	create(len1, len2);
 }
 action_matrix::action_matrix(uint32_t len1, uint32_t len2, uint8_t kind)
 {
+	_log_("matrix construct.");
+
+	row = len1;
+	column = len2;
+	_size = len1 * len2;
+
+	release();
+
 	data = new double *[len1];
 	for (uint32_t i = 0; i < len1; i++)
 	{
 		data[i] = new double[len2];
 	}
-	row = len1;
-	column = len2;
-	erase_flag = 0;
+	
 
 	switch (kind)
 	{
@@ -89,7 +116,24 @@ action_matrix::action_matrix(uint32_t len1, uint32_t len2, uint8_t kind)
 		while (1);
 		//break;
 	}
+
+	refcount = new int(1);
 }
+
+
+
+/**
+* @brief  复制函数
+* @attention 这是一个浅复制
+*/
+action_matrix::action_matrix(const action_matrix &m)
+	:data(m.data), row(m.row), column(m.column), refcount(m.refcount)
+{
+	_log_("matrix copying.");
+	if (refcount)
+		refAdd(refcount, 1);
+}
+
 /**
 * @brief  释放矩阵里的动态空间
 * @param  none
@@ -102,7 +146,43 @@ void action_matrix::delete_data(void)
 		delete[] data[i];
 	}
 	delete[] data;
+
+	delete refcount;
+	refcount = nullptr;
 }
+
+
+/**
+* @berif 引用增加
+*/
+int action_matrix::refAdd(int * addr, int delta)
+{
+	int temp = *addr;
+	*addr += delta;
+	return temp;
+}
+
+/**
+* @berif 当应用计数为0时，释放资源
+*/
+void action_matrix::release()
+{	
+	if (refcount && refAdd(refcount, -1) == 1) {
+		delete_data();
+		_log_("matrix release.");
+	}
+}
+
+/**
+* @berif 析构函数，当引用计数为0时，释放资源
+*/
+action_matrix::~action_matrix()
+{
+	_log_("matrix destruct.");
+	release();
+}
+
+
 void action_matrix::PrintfItself(void)
 {
 	for (uint32_t i = 0; i<row; i++)
@@ -118,24 +198,7 @@ void action_matrix::PrintfItself(void)
 	cout << endl;
 	//USART_OUT(USART3, "\r\n");
 }
-/**
-* @brief  获得矩阵的行数
-* @param  none
-* @retval row
-*/
-uint32_t action_matrix::get_row() const
-{
-	return row;
-}
-/**
-* @brief  获得矩阵的列数
-* @param  none
-* @retval column
-*/
-uint32_t action_matrix::get_column() const
-{
-	return column;
-}
+
 /**
 * @brief  获得矩阵的某一行某一列的值
 * @param  x: 行数
@@ -156,46 +219,55 @@ void action_matrix::set_data(uint32_t x, uint32_t y, double val) const
 {
 	data[x][y] = val;
 }
-void action_matrix::set_erase(void)
-{
-	erase_flag = 1;
-}
-uint8_t action_matrix::get_erase(void) const
-{
-	return erase_flag;
-}
+
 /**
-* @brief  矩阵赋值
-* @param  this[hiden] : x=y运算中的x
-* @param  y: x=y中的y
-* @retval none
-*/
-void action_matrix::operator = (action_matrix y)
+ * @brief  矩阵赋值
+ * @attention 这是一个深度复制
+ * @param  this[hiden] : x=y运算中的x
+ * @param  y: x=y中的y
+ * @retval none
+ */
+// 不应该限制行和列，因为是赋值，直接全部等于y就行了
+//void action_matrix::operator = (const action_matrix& y)
+//{
+//	if (this->row != y.get_row() || this->column != y.get_column())
+//	{
+//		throw ERR_EQUAL;
+//	}
+//	this->row = y.get_row();
+//	this->column = y.get_column();
+//	for (uint32_t i = 0; i < this->row; i++)
+//	{
+//		for (uint32_t j = 0; j < this->column; j++)
+//		{
+//			this->data[i][j] = y.get_data(i, j);
+//		}
+//	}
+//}
+
+// 如果还是保持深度复制的特性
+action_matrix& action_matrix::operator = (const action_matrix& y)
 {
-	if (this->row != y.get_row() || this->column != y.get_column())
+	create(y.row, y.column);				// 抛弃原来所有数据，重新分配
+
+	for (uint32_t i = 0; i <row; i++)
 	{
-		throw ERR_EQUAL;
-	}
-	this->row = y.get_row();
-	this->column = y.get_column();
-	for (uint32_t i = 0; i < this->row; i++)
-	{
-		for (uint32_t j = 0; j < this->column; j++)
+		for (uint32_t j = 0; j < column; j++)
 		{
-			this->data[i][j] = y.get_data(i, j);
+			data[i][j] = y.get_data(i, j);
 		}
 	}
-	if (y.get_erase())
-		y.delete_data();
-	if (this->erase_flag)
-		this->delete_data();
+	return *this;
 }
+
+
 /**
 * @brief  矩阵加法
+* @attention 如果相乘之后不赋值也不会内存泄漏
 * @param  none
 * @retval none
 */
-action_matrix operator + (action_matrix x, action_matrix y)
+action_matrix operator + (action_matrix& x, action_matrix& y)
 {
 	if (x.get_column() != y.get_column() || x.get_row() != y.get_row())
 	{
@@ -211,15 +283,12 @@ action_matrix operator + (action_matrix x, action_matrix y)
 				result.set_data(i, j, x.get_data(i, j) + y.get_data(i, j));
 			}
 		}
-		if (y.get_erase())
-			y.delete_data();
-		if (x.get_erase())
-			x.delete_data();
-		result.set_erase();
 		return result;
 	}
 }
-action_matrix operator+(action_matrix x, double y)
+
+
+action_matrix operator+(action_matrix& x, double y)
 {
 
 	if (x.get_row() != x.get_column())
@@ -239,13 +308,11 @@ action_matrix operator+(action_matrix x, double y)
 					result.set_data(i, j, x.get_data(i, j));
 			}
 		}
-		if (x.get_erase())
-			x.delete_data();
-		result.set_erase();
+
 		return result;
 	}
 }
-action_matrix operator+(double x, action_matrix y)
+action_matrix operator+(double x, action_matrix& y)
 {
 	if (y.get_row() != y.get_column())
 	{
@@ -264,18 +331,17 @@ action_matrix operator+(double x, action_matrix y)
 					result.set_data(i, j, y.get_data(i, j));
 			}
 		}
-		if (y.get_erase())
-			y.delete_data();
-		result.set_erase();
 		return result;
 	}
 }
+
+
 /**
 * @brief  矩阵减法
 * @param  none
 * @retval none
 */
-action_matrix operator - (action_matrix x, action_matrix y)
+action_matrix operator - (action_matrix& x, action_matrix& y)
 {
 	if (x.get_column() != y.get_column() || x.get_row() != y.get_row())
 	{
@@ -291,19 +357,14 @@ action_matrix operator - (action_matrix x, action_matrix y)
 				result.set_data(i, j, x.get_data(i, j) - y.get_data(i, j));
 			}
 		}
-		if (y.get_erase())
-			y.delete_data();
-		if (x.get_erase())
-			x.delete_data();
-		result.set_erase();
 		return result;
 	}
 }
-action_matrix operator - (action_matrix x, double y)
+action_matrix operator - (action_matrix& x, double y)
 {
 	return x + (-y);
 }
-action_matrix operator - (double x, action_matrix y)
+action_matrix operator - (double x, action_matrix& y)
 {
 	if (y.get_row() != y.get_column())
 	{
@@ -322,18 +383,17 @@ action_matrix operator - (double x, action_matrix y)
 					result.set_data(i, j, y.get_data(i, j));
 			}
 		}
-		if (y.get_erase())
-			y.delete_data();
-		result.set_erase();
 		return result;
 	}
 }
+
+
 /**
 * @brief  矩阵乘法
 * @param  none
 * @retval none
 */
-action_matrix operator * (action_matrix x, action_matrix y)
+action_matrix operator * (action_matrix& x, action_matrix& y)
 {
 	if (x.get_column() != y.get_row())
 	{
@@ -343,7 +403,7 @@ action_matrix operator * (action_matrix x, action_matrix y)
 	{
 		action_matrix result(x.get_row(), y.get_column());
 		double temp = 0;
-		for (uint32_t i = 0; i < x.get_row(); i++)
+		for (uint32_t i = 0; i < x.get_row(); i++) {
 			for (uint32_t j = 0; j < y.get_column(); j++)
 			{
 				temp = 0;
@@ -353,54 +413,40 @@ action_matrix operator * (action_matrix x, action_matrix y)
 				}
 				result.set_data(i, j, temp);
 			}
-		if (y.get_erase())
-			y.delete_data();
-		if (x.get_erase())
-			x.delete_data();
-		result.set_erase();
+		}
 		return result;
 	}
 }
-action_matrix operator * (action_matrix x, double y)
+action_matrix operator * (action_matrix& x, double y)
 {
 
 	action_matrix result(x.get_row(), x.get_column());
-	for (uint32_t i = 0; i < x.get_row(); i++)
-		for (uint32_t j = 0; j < x.get_column(); j++)
-		{
+	for (uint32_t i = 0; i < x.get_row(); i++) {
+		for (uint32_t j = 0; j < x.get_column(); j++){
 			result.set_data(i, j, x.get_data(i, j)*y);
 		}
-	if (x.get_erase())
-		x.delete_data();
-	result.set_erase();
+	}
 	return result;
 }
-action_matrix operator * (double x, action_matrix y)
+action_matrix operator * (double x, action_matrix& y)
 {
-
 	action_matrix result(y.get_row(), y.get_column());
-	for (uint32_t i = 0; i < y.get_row(); i++)
-		for (uint32_t j = 0; j < y.get_column(); j++)
-		{
+	for (uint32_t i = 0; i < y.get_row(); i++) {
+		for (uint32_t j = 0; j < y.get_column(); j++) {
 			result.set_data(i, j, y.get_data(i, j)*x);
 		}
-	if (y.get_erase())
-		y.delete_data();
-	result.set_erase();
+	}
 	return result;
 }
 
-action_matrix operator / (action_matrix x, double y)
+action_matrix operator / (action_matrix& x, double y)
 {
 	action_matrix result(x.get_row(), x.get_column());
-	for (uint32_t i = 0; i < x.get_row(); i++)
-		for (uint32_t j = 0; j < x.get_column(); j++)
-		{
+	for (uint32_t i = 0; i < x.get_row(); i++) {
+		for (uint32_t j = 0; j < x.get_column(); j++) {
 			result.set_data(i, j, x.get_data(i, j) / y);
 		}
-	if (x.get_erase())
-		x.delete_data();
-	result.set_erase();
+	}
 	return result;
 }
 /**
@@ -418,9 +464,6 @@ action_matrix operator !(action_matrix x) //矩阵的转置
 			result.set_data(j, i, x.get_data(i, j));
 		}
 	}
-	if (x.get_erase())
-		x.delete_data();
-	result.set_erase();
 	return result;
 }
 /**
@@ -526,9 +569,6 @@ action_matrix operator ~(action_matrix x) //矩阵求逆
 	matrix_U.delete_data();
 	matrix_L.delete_data();
 
-	if (x.get_erase())
-		x.delete_data();
-	result.set_erase();
 	return result;
 }
 double operator *(action_matrix x)
@@ -560,4 +600,24 @@ double operator *(action_matrix x)
 		out = x.get_data(0, 0)*x.get_data(1, 1) - x.get_data(0, 1)*x.get_data(1, 0);
 	return out;
 }
+
+
+std::ostream &operator<<(std::ostream & os, action_matrix &item)
+{
+	os << '[';
+	for (int i = 0; i < item.get_row(); ++i) {
+		for (int j = 0; j < item.get_column(); ++j) {
+			os << item.get_data(i, j);
+			if (item.get_column() != j + 1)
+				os << ',';
+		}
+		if (item.get_row() != i + 1)
+			os << ';' << endl << ' ';
+		else
+			os << ']' << endl;
+	}
+	return os;
+}
+
+
 /************************ (C) COPYRIGHT 2016 ACTION *****END OF FILE****/

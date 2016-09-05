@@ -53,5 +53,8 @@
     <ClInclude Include="action_PID.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="config_default.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
