@@ -110,7 +110,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="action_AHRS.cpp" />
     <ClCompile Include="action_control.cpp" />
     <ClCompile Include="action_math.cpp" />
     <ClCompile Include="action_matrix.cpp" />
@@ -118,7 +117,6 @@
     <ClCompile Include="mian.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="action_AHRS.h" />
     <ClInclude Include="action_control.h" />
     <ClInclude Include="action_math.h" />
     <ClInclude Include="action_matrix.h" />

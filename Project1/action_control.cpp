@@ -20,10 +20,6 @@
 #include "action_control.h"
 #include <cstring>
 #include "stdint.h"
-
-//#include <iostream>
-//
-//using namespace std;
 /* Private  typedef -----------------------------------------------------------*/
 /* Private  define ------------------------------------------------------------*/
 /* Private  macro -------------------------------------------------------------*/
@@ -149,7 +145,6 @@ float *getSystem()
 {
 	/* 将辨识结果转移到数组中 */
 	float *result = new float[(*ab).get_row()];
-
 	(*ab) = (~(!(*data)*(*data)))*(!(*data))*(*y);
 
 	for (uint32_t i = 0; i < (*ab).get_row(); i++)

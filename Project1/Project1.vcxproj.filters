@@ -24,9 +24,6 @@
     <ClCompile Include="mian.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="action_AHRS.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="action_control.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -39,9 +36,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="action_math.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="action_AHRS.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="maa_config.h">

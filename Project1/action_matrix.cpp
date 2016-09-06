@@ -1,9 +1,9 @@
 /**
 ******************************************************************************
 * @file    action_matrix.cpp
-* @author  lxy
+* @author  lxy zlq
 * @version V1.0
-* @date    2016.4.16
+* @date    2016.9.6
 * @brief   this is a tool for calculation of matrix
 ******************************************************************************
 * @attention
@@ -32,21 +32,19 @@ using namespace std;
 /* Exported function prototypes -----------------------------------------------*/
 /* Exported class functions ---------------------------------------------------*/
 
-action_matrix::action_matrix()
-{
-	row = column = 0;
-	refcount = nullptr;
-	_size = 0;
-}
-
-// 矩阵内存分配应该都调用这个函数
+/**
+* @brief        为矩阵分配内存
+* @param  len1: 矩阵的行数
+* @param  len2: 矩阵的列数
+* @retval None
+*/
 void action_matrix::create(uint32_t len1, uint32_t len2)
 {
 	row = len1;
 	column = len2;
 	_size = len1 * len2;
 
-	release();
+	delete_data();
 
 	// 分配内存
 	data = new double *[len1];
@@ -56,7 +54,17 @@ void action_matrix::create(uint32_t len1, uint32_t len2)
 	
 	refcount = new int(1);
 }
-
+/**
+* @brief  矩阵构造函数
+* @param  None
+* @retval None
+*/
+action_matrix::action_matrix()
+{
+	row = column = 0;
+	refcount = nullptr;
+	_size = 0;
+}
 
 /**
 * @brief        矩阵构造函数
@@ -69,23 +77,19 @@ action_matrix::action_matrix(uint32_t len1, uint32_t len2)
 	_log_("matrix construct.");
 	create(len1, len2);
 }
+/**
+* @brief        矩阵构造函数
+* @param  len1: 矩阵的行数
+* @param  len2: 矩阵的列数
+* @param  kind: MATRIX_I       单位矩阵
+	            MATRIX_ZERO    全0矩阵
+	            MATRIX_ALL_I   全1矩阵
+* @retval None
+*/
 action_matrix::action_matrix(uint32_t len1, uint32_t len2, uint8_t kind)
 {
 	_log_("matrix construct.");
-
-	row = len1;
-	column = len2;
-	_size = len1 * len2;
-
-	release();
-
-	data = new double *[len1];
-	for (uint32_t i = 0; i < len1; i++)
-	{
-		data[i] = new double[len2];
-	}
-	
-
+	create(len1, len2);
 	switch (kind)
 	{
 	case MATRIX_I:
@@ -127,7 +131,7 @@ action_matrix::action_matrix(uint32_t len1, uint32_t len2, uint8_t kind)
 * @attention 这是一个浅复制
 */
 action_matrix::action_matrix(const action_matrix &m)
-	:data(m.data), row(m.row), column(m.column), refcount(m.refcount)
+	:data(m.data), row(m.row), column(m.column), refcount(m.refcount), _size(m._size)
 {
 	_log_("matrix copying.");
 	if (refcount)
@@ -141,19 +145,25 @@ action_matrix::action_matrix(const action_matrix &m)
 */
 void action_matrix::delete_data(void)
 {
-	for (uint32_t i = 0; i < row; i++)
-	{
-		delete[] data[i];
-	}
-	delete[] data;
+	if (refcount && refAdd(refcount, -1) == 1) {
+		_log_("matrix release.");
+		for (uint32_t i = 0; i < row; i++)
+		{
+			delete[] data[i];
+		}
+		delete[] data;
 
-	delete refcount;
-	refcount = nullptr;
+		delete refcount;
+		refcount = nullptr;
+	}
 }
 
 
 /**
 * @berif 引用增加
+* @param addr:   指向引用计数的指针
+* @param delta:  引用计数减掉的值
+* @retval temp:  减数前的引用计数的值
 */
 int action_matrix::refAdd(int * addr, int delta)
 {
@@ -161,44 +171,14 @@ int action_matrix::refAdd(int * addr, int delta)
 	*addr += delta;
 	return temp;
 }
-
-/**
-* @berif 当应用计数为0时，释放资源
-*/
-void action_matrix::release()
-{	
-	if (refcount && refAdd(refcount, -1) == 1) {
-		delete_data();
-		_log_("matrix release.");
-	}
-}
-
 /**
 * @berif 析构函数，当引用计数为0时，释放资源
 */
 action_matrix::~action_matrix()
 {
 	_log_("matrix destruct.");
-	release();
+	delete_data();
 }
-
-
-void action_matrix::PrintfItself(void)
-{
-	for (uint32_t i = 0; i<row; i++)
-	{
-		//USART_OUT(USART3, "\r\n");
-		cout << endl;
-		for (uint32_t j = 0; j<column; j++)
-		{
-			//USART_OUT(USART3, "%d ", (int)(data[i][j] * 1000));
-			cout << data[i][j]<<' ';
-		}
-	}
-	cout << endl;
-	//USART_OUT(USART3, "\r\n");
-}
-
 /**
 * @brief  获得矩阵的某一行某一列的值
 * @param  x: 行数
@@ -219,7 +199,14 @@ void action_matrix::set_data(uint32_t x, uint32_t y, double val) const
 {
 	data[x][y] = val;
 }
-
+/**
+* @brief  矩阵取值
+* @retval none
+*/
+double* const action_matrix::operator [] (uint32_t i) const
+{
+	return data[i];
+}
 /**
  * @brief  矩阵赋值
  * @attention 这是一个深度复制
@@ -227,28 +214,9 @@ void action_matrix::set_data(uint32_t x, uint32_t y, double val) const
  * @param  y: x=y中的y
  * @retval none
  */
-// 不应该限制行和列，因为是赋值，直接全部等于y就行了
-//void action_matrix::operator = (const action_matrix& y)
-//{
-//	if (this->row != y.get_row() || this->column != y.get_column())
-//	{
-//		throw ERR_EQUAL;
-//	}
-//	this->row = y.get_row();
-//	this->column = y.get_column();
-//	for (uint32_t i = 0; i < this->row; i++)
-//	{
-//		for (uint32_t j = 0; j < this->column; j++)
-//		{
-//			this->data[i][j] = y.get_data(i, j);
-//		}
-//	}
-//}
-
-// 如果还是保持深度复制的特性
 action_matrix& action_matrix::operator = (const action_matrix& y)
 {
-	create(y.row, y.column);				// 抛弃原来所有数据，重新分配
+	create(y.row, y.column);
 
 	for (uint32_t i = 0; i <row; i++)
 	{
@@ -259,8 +227,6 @@ action_matrix& action_matrix::operator = (const action_matrix& y)
 	}
 	return *this;
 }
-
-
 /**
 * @brief  矩阵加法
 * @attention 如果相乘之后不赋值也不会内存泄漏
@@ -286,8 +252,6 @@ action_matrix operator + (action_matrix& x, action_matrix& y)
 		return result;
 	}
 }
-
-
 action_matrix operator+(action_matrix& x, double y)
 {
 
@@ -454,7 +418,7 @@ action_matrix operator / (action_matrix& x, double y)
 * @param  none
 * @retval none
 */
-action_matrix operator !(action_matrix x) //矩阵的转置
+action_matrix operator !(action_matrix &x)
 {
 	action_matrix result(x.get_column(), x.get_row());
 	for (uint32_t i = 0; i < x.get_row(); i++)
@@ -471,7 +435,7 @@ action_matrix operator !(action_matrix x) //矩阵的转置
 * @param  none
 * @retval none
 */
-action_matrix operator ~(action_matrix x) //矩阵求逆
+action_matrix operator ~(action_matrix &x) //矩阵求逆
 {
 	if (x.get_column() != x.get_row())
 	{
@@ -539,13 +503,13 @@ action_matrix operator ~(action_matrix x) //矩阵求逆
 	matrix_L = !matrix_L;
 	temp_val = 0;
 	temp_val2 = 0;
-	for (uint32_t j = x.get_column() - 1; j >= 0; j--)
+	for (uint32_t j = x.get_column() - 1; (j+2) >= (2); j--)
 	{
-		for (uint32_t i = x.get_column() - 1; i >= 0; i--)
+		for (uint32_t i = x.get_column() - 1; (i+2) >= (2); i--)
 		{
 			temp_val = 0;
 			temp_val2 = 0;
-			for (uint32_t w = x.get_column() - 1; w > i; w--)
+			for (uint32_t w = x.get_column() - 1; (w+2) > (i+2); w--)
 			{
 				temp_val = temp_val + matrix_U.get_data(i, w)*matrix_U_Inverse.get_data(w, j);
 				temp_val2 = temp_val2 + matrix_L.get_data(i, w)*matrix_L_Inverse.get_data(w, j);
@@ -571,7 +535,12 @@ action_matrix operator ~(action_matrix x) //矩阵求逆
 
 	return result;
 }
-double operator *(action_matrix x)
+/**
+* @brief  矩阵求行列式
+* @param  none
+* @retval none
+*/
+double operator *(action_matrix &x)
 {
 	double out=0;
 	if (x.get_row()>2)
@@ -601,12 +570,16 @@ double operator *(action_matrix x)
 	return out;
 }
 
-
+/**
+* @brief  矩阵打印自身
+* @param  none
+* @retval none
+*/
 std::ostream &operator<<(std::ostream & os, action_matrix &item)
 {
 	os << '[';
-	for (int i = 0; i < item.get_row(); ++i) {
-		for (int j = 0; j < item.get_column(); ++j) {
+	for (uint32_t i = 0; i < item.get_row(); ++i) {
+		for (uint32_t j = 0; j < item.get_column(); ++j) {
 			os << item.get_data(i, j);
 			if (item.get_column() != j + 1)
 				os << ',';
