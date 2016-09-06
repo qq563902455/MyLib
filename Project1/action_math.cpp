@@ -75,8 +75,6 @@ float **BasicFittingCal(void)
 
 	result = (~(*BasicFittingA))*(*BasicFittingY);
 
-	BasicFittingA->delete_data();
-	BasicFittingY->delete_data();
 
 	delete BasicFittingA;
 	delete BasicFittingY;
@@ -86,7 +84,6 @@ float **BasicFittingCal(void)
 		for (uint8_t j = 0; j < 3; j++)
 			re[i][j] = (float)result.get_data(i, j);
 	}
-	result.delete_data();
 	return re;
 }
 

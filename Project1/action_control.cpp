@@ -152,10 +152,6 @@ float *getSystem()
 		result[i] = (float)(*ab).get_data(i, 0);
 	}
 
-	/* 释放矩阵中的数据 */
-	(*ab).delete_data();
-	(*data).delete_data();
-	(*y).delete_data();
 
 	/* 释放矩阵以及纯滞后需要的数据 */
     delete[] in_st;

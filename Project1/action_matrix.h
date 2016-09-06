@@ -47,31 +47,21 @@ private:
 	int *refcount;
 	int refAdd(int * addr, int delta);
 	void create(uint32_t len1, uint32_t len2);
+	void delete_data(void);
 public:
 	action_matrix();
 	action_matrix(uint32_t len1, uint32_t len2);
 	action_matrix(uint32_t len1, uint32_t len2, uint8_t kind);
 	action_matrix(const action_matrix &m);
 	~action_matrix();
-
-	void delete_data(void);
 	uint32_t get_row() const;
 	uint32_t get_column() const;
-
 	size_t size() const;
 	bool empty() const;
-
-	// 以下这两个函数的必要性
-	// 这两个函数存在的原因应该是有越界检查
 	double get_data(uint32_t x, uint32_t y) const;
 	void set_data(uint32_t x, uint32_t y, double val) const;
-
 	action_matrix& operator = (const action_matrix& y);
-
-	// 这个运算符重载应该有两个，一个针对普通对象，一个针对const对象
-	// 可以同时达到取值和更改数值的作用
-	double* const operator [] (size_t i) const;
-	const double* const operator[](size_t i);		// const对象，指针指向的数据不应该被更改
+	double* const operator [] (size_t i);
 };
 
 inline uint32_t action_matrix::get_row() const { return row; }

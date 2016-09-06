@@ -97,7 +97,7 @@ action_matrix::action_matrix(uint32_t len1, uint32_t len2, uint8_t kind)
 	{
 	case MATRIX_I:
 		for (uint32_t i = 0; i < len1; i++)
-			for (uint8_t j = 0; j < len2; j++)
+			for (uint32_t j = 0; j < len2; j++)
 			{
 				if (i != j)
 					data[i][j] = 0;
@@ -123,8 +123,6 @@ action_matrix::action_matrix(uint32_t len1, uint32_t len2, uint8_t kind)
 		while (1);
 		//break;
 	}
-
-	refcount = new int(1);
 }
 
 
@@ -143,9 +141,10 @@ action_matrix::action_matrix(const action_matrix &m)
 
 /**
 * @brief  释放矩阵里的动态空间
-* @attention 这个函数应该只有在析构函数和内存分配函数中使用，不应该在其它地方使用,
+* @attention 1,这个函数应该只有在析构函数和内存分配函数中使用，不应该在其它地方使用,
 *            因为既然是通过引用计数实现的GC，那么应该通过C++自身的机构，作用域和析构来实现释放资源，
 *            再就是重新分配对旧资源的处理。
+             2,如果矩阵本身就是通过动态分配内存得到，则需要手动调用该方法来释放空间
 * @param  none
 * @retval None
 */
@@ -219,15 +218,7 @@ void action_matrix::set_data(uint32_t x, uint32_t y, double val) const
 * @brief  矩阵取值
 * @retval none
 */
-double* const action_matrix::operator [] (size_t i) const
-{
-	return data[i];
-}
-/**
-* @brief  矩阵取值,定义const对象时
-* @retval none
-*/
-const double* const action_matrix::operator[](size_t i)
+double* const action_matrix::operator [] (size_t i)
 {
 	return data[i];
 }
@@ -587,7 +578,6 @@ double operator *(action_matrix &x)
 				out += (*(*data))*x.get_data(0, i);
 			else
 				out -= (*(*data))*x.get_data(0, i);
-			data->delete_data();
 			delete data;
 		}
 	}
