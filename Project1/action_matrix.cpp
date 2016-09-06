@@ -34,6 +34,8 @@ using namespace std;
 
 /**
 * @brief        为矩阵分配内存
+* @attention    分配内存分为初次分配和非初次分配，非初次分配内存也就是重新分配内存
+*               这需要检查是否要释放掉之前已经分配好的内存
 * @param  len1: 矩阵的行数
 * @param  len2: 矩阵的列数
 * @retval None
@@ -63,6 +65,7 @@ action_matrix::action_matrix()
 {
 	row = column = 0;
 	refcount = nullptr;
+	data = nullptr;
 	_size = 0;
 }
 
@@ -140,6 +143,9 @@ action_matrix::action_matrix(const action_matrix &m)
 
 /**
 * @brief  释放矩阵里的动态空间
+* @attention 这个函数应该只有在析构函数和内存分配函数中使用，不应该在其它地方使用,
+*            因为既然是通过引用计数实现的GC，那么应该通过C++自身的机构，作用域和析构来实现释放资源，
+*            再就是重新分配对旧资源的处理。
 * @param  none
 * @retval None
 */
@@ -152,6 +158,7 @@ void action_matrix::delete_data(void)
 			delete[] data[i];
 		}
 		delete[] data;
+		data = nullptr;
 
 		delete refcount;
 		refcount = nullptr;
@@ -181,29 +188,46 @@ action_matrix::~action_matrix()
 }
 /**
 * @brief  获得矩阵的某一行某一列的值
+* @attention 越界检查
 * @param  x: 行数
 * @param  y: 列数
 * @retval data[x][y]
 */
 double action_matrix::get_data(uint32_t x, uint32_t y) const
 {
-	return data[x][y];
+	if (x < row && y < column)
+		return data[x][y];
+	else
+		return 0.0;
 }
 /**
 * @brief  改变矩阵某一行某一列的值
+* @attention 越界检查
 * @param  x: 行数
 * @param  y: 列数
 * @retval None
 */
 void action_matrix::set_data(uint32_t x, uint32_t y, double val) const
 {
-	data[x][y] = val;
+	if (x < row && y < column)
+		data[x][y] = val;
+	else
+		_log_("over");
 }
+
 /**
 * @brief  矩阵取值
 * @retval none
 */
-double* const action_matrix::operator [] (uint32_t i) const
+double* const action_matrix::operator [] (size_t i) const
+{
+	return data[i];
+}
+/**
+* @brief  矩阵取值,定义const对象时
+* @retval none
+*/
+const double* const action_matrix::operator[](size_t i)
 {
 	return data[i];
 }
@@ -432,6 +456,7 @@ action_matrix operator !(action_matrix &x)
 }
 /**
 * @brief  矩阵求逆
+* @attention 使用了delete_data，应该需要修改，太复杂了，不是我写的不好改
 * @param  none
 * @retval none
 */
@@ -528,15 +553,16 @@ action_matrix operator ~(action_matrix &x) //矩阵求逆
 	}
 	result = matrix_U_Inverse*(!matrix_L_Inverse);
 
-	matrix_U_Inverse.delete_data();
-	matrix_L_Inverse.delete_data();
-	matrix_U.delete_data();
-	matrix_L.delete_data();
+	//matrix_U_Inverse.delete_data();
+	//matrix_L_Inverse.delete_data();
+	//matrix_U.delete_data();
+	//matrix_L.delete_data();
 
 	return result;
 }
 /**
 * @brief  矩阵求行列式
+* @attention 使用了delete_data，应该需要修改，这个..
 * @param  none
 * @retval none
 */
@@ -571,7 +597,7 @@ double operator *(action_matrix &x)
 }
 
 /**
-* @brief  矩阵打印自身
+* @brief  重载<<输出运算符，矩阵打印自身
 * @param  none
 * @retval none
 */
