@@ -114,6 +114,7 @@
     <ClCompile Include="action_math.cpp" />
     <ClCompile Include="action_matrix.cpp" />
     <ClCompile Include="action_PID.cpp" />
+    <ClCompile Include="ArtificialNeuralNetwork.cpp" />
     <ClCompile Include="mian.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -121,7 +122,7 @@
     <ClInclude Include="action_math.h" />
     <ClInclude Include="action_matrix.h" />
     <ClInclude Include="action_PID.h" />
-    <ClInclude Include="config_default.h" />
+    <ClInclude Include="ArtificialNeuralNetwork.h" />
     <ClInclude Include="maa_config.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

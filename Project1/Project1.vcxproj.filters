@@ -30,6 +30,9 @@
     <ClCompile Include="action_PID.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ArtificialNeuralNetwork.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="action_matrix.h">
@@ -47,7 +50,7 @@
     <ClInclude Include="action_PID.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="config_default.h">
+    <ClInclude Include="ArtificialNeuralNetwork.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

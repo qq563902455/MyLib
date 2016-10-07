@@ -17,9 +17,6 @@
 #include <cmath>
 #include <cstdint>
 #include "action_matrix.h"
-#include <iostream>
-
-using namespace std;
 //#include "usart.h"
 /* Private  typedef -----------------------------------------------------------*/
 /* Private  define ------------------------------------------------------------*/
@@ -77,7 +74,6 @@ action_matrix::action_matrix()
 */
 action_matrix::action_matrix(uint32_t len1, uint32_t len2)
 {
-	_log_("matrix construct.");
 	create(len1, len2);
 }
 /**
@@ -91,7 +87,6 @@ action_matrix::action_matrix(uint32_t len1, uint32_t len2)
 */
 action_matrix::action_matrix(uint32_t len1, uint32_t len2, uint8_t kind)
 {
-	_log_("matrix construct.");
 	create(len1, len2);
 	switch (kind)
 	{
@@ -134,7 +129,6 @@ action_matrix::action_matrix(uint32_t len1, uint32_t len2, uint8_t kind)
 action_matrix::action_matrix(const action_matrix &m)
 	:data(m.data), row(m.row), column(m.column), refcount(m.refcount), _size(m._size)
 {
-	_log_("matrix copying.");
 	if (refcount)
 		refAdd(refcount, 1);
 }
@@ -151,7 +145,6 @@ action_matrix::action_matrix(const action_matrix &m)
 void action_matrix::delete_data(void)
 {
 	if (refcount && refAdd(refcount, -1) == 1) {
-		_log_("matrix release.");
 		for (uint32_t i = 0; i < row; i++)
 		{
 			delete[] data[i];
@@ -182,7 +175,6 @@ int action_matrix::refAdd(int * addr, int delta)
 */
 action_matrix::~action_matrix()
 {
-	_log_("matrix destruct.");
 	delete_data();
 }
 /**
@@ -210,8 +202,6 @@ void action_matrix::set_data(uint32_t x, uint32_t y, double val) const
 {
 	if (x < row && y < column)
 		data[x][y] = val;
-	else
-		_log_("over");
 }
 
 /**

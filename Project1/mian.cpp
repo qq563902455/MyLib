@@ -1,25 +1,64 @@
-#include <iostream>
-#include <cstdint>
-#include "action_matrix.h"
+#include <fstream>  
+#include <string>  
+#include <iostream>  
+#include "ArtificialNeuralNetwork.h"
 #include "action_control.h"
 #include "action_PID.h"
-using namespace std;
 
-control_model g(0,3,1,0,10000);
+
+using namespace std;
 
 int main(void)
 {
-	for (uint32_t i = 1; i < 10001; i++)
-	{
-		g.model_iddata(i, i+i-1+i/110.0f);
-	}
-	g.model_ident();
+	//ifstream file("D:\\常用未整理\\代码类\\自适应控制\\test.csv");
+	//float test;
+	//
+	//file >> test;
+	//file >> test;
+	//cout << test << endl;
+	//file.close();
 
-	for (uint8_t i = 0; i < 8; i++)
-	{
-		cout << g.getNumP()[i] << endl;
-		cout << g.getDenP()[i] << endl;
-	}
+	//BP_ANN test(1, 5, 1);
+	//float in;
+	//float out;
+	//for (uint32_t i = 0; i < 100; i++)
+	//{
+	//	in = 49 / 100.0f;
+	//	test.out(&in, &out);
+	//	cout << out << endl;
+	//	for (uint32_t j = 0; j < 50; j++)
+	//	{
+	//		out = 0;
+	//		in = j / 100.0f;
+	//		test.study(&in, &out);
+	//	}
+	//	for (uint32_t j = 50; j < 100; j++)
+	//	{
+	//		out = 1;
+	//		in = j / 100.0f;
+	//		test.study(&in, &out);
+	//	}
+	//	
+	//}
+	//in = 49/100.0f;
+	//test.out(&in, &out);
+	//cout << out << endl;
 
-	while (1);
+	float num[3] = { 0.01,0.0083887,0.007234 };
+	float den[3] = { 1,-0.7714,-0.2291};
+	float out=0;
+
+	control_model test(0, num, den, 3, 3);
+	action_PID ctr;
+
+	ctr.OptTuning(test, 100, 0.01, 1);
+
+	cout << ctr.Kp << endl;
+	cout << ctr.Ki << endl;
+
+
+
+	getchar();
+
+	return 0;
 }

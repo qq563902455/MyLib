@@ -119,6 +119,10 @@ void action_PID::autoTuning(control_model &g, float wc, float rwc,float T)
 	temp_A = T / temp_A;
 	temp_ph = -temp_ph;
 
+	temp_A = temp_A*A_z;
+	temp_ph += A_ph;
+
+
 	rwc = rwc / 180.0f*3.1415926f;                                                  //将给定相位裕度从角度变成弧度
 	ph_pi = rwc - 3.141592 - ph_g;                                                  //计算PI控制器需要的相位角
 	Rate_pi = tan(ph_pi) / (temp_A*sin(temp_ph) - temp_A*tan(ph_pi)*cos(temp_ph));  //计算P与I的比例

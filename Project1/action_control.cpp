@@ -22,6 +22,14 @@
 #include "stdint.h"
 /* Private  typedef -----------------------------------------------------------*/
 /* Private  define ------------------------------------------------------------*/
+#define DEBUG
+#ifdef DEBUG
+#include <iostream>
+using namespace std;
+#define _log_(str) cout<<str<<endl;
+#else
+#define _log_(str)	
+#endif
 /* Private  macro -------------------------------------------------------------*/
 /* Private  variables ---------------------------------------------------------*/
 static uint8_t na = 0;
@@ -29,7 +37,7 @@ static uint8_t nb = 0;
 static uint8_t nd = 0;
 static action_matrix *ab;
 static action_matrix *y;
-static action_matrix *data;
+static action_matrix *prdata;
 static float *in_st;
 static uint32_t count_ident = 0;
 static float out_last = 0;
@@ -61,9 +69,12 @@ void input_Order_Model(uint8_t nA,uint8_t nB,uint8_t d, uint32_t num)
 	count_ident = 0;
 	out_last = 0;
 
+	_log_("nA:" << (int)na);
+	_log_("nB:" << (int)nb);
+	_log_("nd:" << (int)d);
 
 	/* 初始化递归最小二乘法需要的矩阵 */
-	data = new action_matrix(num, na + nb, MATRIX_ZERO);
+	prdata = new action_matrix(num, na + nb, MATRIX_ZERO);
 	ab = new action_matrix(na + nb, 1, MATRIX_ZERO);
 	y = new action_matrix(num, 1, MATRIX_ZERO);
 
@@ -90,48 +101,48 @@ void input_in_out_data(float in, float out)
 		/* 更新系统输入数据 */
 		for (uint8_t i = 0; i < nb - 1; i++)
 		{
-			data->set_data(count_ident, na + nb - 1 - i, data->get_data(count_ident - 1, na + nb - i - 2));
+			prdata->set_data(count_ident, na + nb - 1 - i, prdata->get_data(count_ident - 1, na + nb - i - 2));
 		}
 		if (nd != 0)
 		{
-			data->set_data(count_ident, na, in_st[nd - 1]);
+			prdata->set_data(count_ident, na, in_st[nd - 1]);
 			memcpy(in_st + 1, in_st, (nd - 1) * 4);
 			in_st[0] = in;
 		}
 		else
 		{
-			data->set_data(count_ident, na, in);
+			prdata->set_data(count_ident, na, in);
 		}
 		/* 更新系统输出数据 */
 		for (uint8_t i = 0; i < na - 1; i++)
 		{
-			data->set_data(count_ident, na - i - 1, data->get_data(count_ident - 1, na - i - 2));
+			prdata->set_data(count_ident, na - i - 1, prdata->get_data(count_ident - 1, na - i - 2));
 		}
-		data->set_data(count_ident, 0, -out_last);
+		prdata->set_data(count_ident, 0, -out_last);
 	}
 	else
 	{
 		/* 更新系统输入数据 */
 		for (uint8_t i = 0; i < nb - 1; i++)
 		{
-			data->set_data(count_ident, na + nb - 1 - i,0);
+			prdata->set_data(count_ident, na + nb - 1 - i,0);
 		}
 		if (nd != 0)
 		{
-			data->set_data(na, 0, in_st[nd - 1]);
+			prdata->set_data(na, 0, in_st[nd - 1]);
 			memcpy(in_st + 1, in_st, (nd - 1) * 4);
 			in_st[0] = in;
 		}
 		else
 		{
-			data->set_data(count_ident, na, in);
+			prdata->set_data(count_ident, na, in);
 		}
 		/* 更新系统输出数据 */
 		for (uint8_t i = 0; i < na - 1; i++)
 		{
-			data->set_data(count_ident, na - i - 1, 0);
+			prdata->set_data(count_ident, na - i - 1, 0);
 		}
-		data->set_data(count_ident, 0, -out_last);
+		prdata->set_data(count_ident, 0, -out_last);
 	}
 	out_last = out;
 	count_ident++;
@@ -145,18 +156,19 @@ float *getSystem()
 {
 	/* 将辨识结果转移到数组中 */
 	float *result = new float[(*ab).get_row()];
-	(*ab) = (~(!(*data)*(*data)))*(!(*data))*(*y);
+	(*ab) = (~(!(*prdata)*(*prdata)))*(!(*prdata))*(*y);
 
 	for (uint32_t i = 0; i < (*ab).get_row(); i++)
 	{
 		result[i] = (float)(*ab).get_data(i, 0);
+		_log_("re: "<<i<<": "<< result[i]);
 	}
 
 
 	/* 释放矩阵以及纯滞后需要的数据 */
     delete[] in_st;
 	delete  ab;
-	delete  data;
+	delete  prdata;
 	delete  y;
 
 	return result;
@@ -207,15 +219,15 @@ control_model::control_model(uint8_t cd, float* num, float* den, uint8_t LenN, u
 control_model::control_model(uint8_t cd, uint8_t nA, uint8_t nB, uint8_t nd, uint32_t num_ident)
 { 
 	d_or_c = cd;
-	if (nA - nB + 1 - nd>0)
+	if (nA - nB - nd + 1 >= 0)
 	{
-		len_num = nA - nB + 1 - nd + 1;
+		len_num = nA - nd + 1;
 		len_den = nA + 1;
 	}
 	else
 	{
-		len_num = nB;
-		len_den = -(-nB + 1 - nd) + 1;
+		len_num = nB + nd;
+		len_den = nB + nd;
 	}
 
 	Num = new float[len_num];
@@ -317,7 +329,7 @@ void control_model::model_ident(void)
 	}
 	for (uint8_t i = 0; i < len_num; i++)
 	{
-		if (i < nb + 1)
+		if (i < nb)
 		{
 			Num[i] = re[na + i];
 		}
@@ -339,14 +351,23 @@ float control_model::step(float in, uint8_t cmd) const
 	}
 	else if (cmd == STEPING)
 	{
+		uint8_t temp_len = 0;
+		if (len_den > len_num)
+		{
+			temp_len = len_den;
+		}
+		else
+		{
+			temp_len = len_num;
+		}
 		if (flag == 0)
 		{
-			out_simu = new float[len_den - 1];
-			in_simu = new float[len_den];
+			out_simu = new float[temp_len - 1];
+			in_simu = new float[temp_len];
 
-			for (uint8_t i = 0; i < len_den; i++)
+			for (uint8_t i = 0; i < temp_len; i++)
 			{
-				if (i < len_den - 1)
+				if (i < temp_len - 1)
 				{
 					out_simu[i] = 0;
 				}
@@ -355,20 +376,21 @@ float control_model::step(float in, uint8_t cmd) const
 			flag++;
 		}
 
-		memcpy(in_simu, in_simu + 1, 4 * (len_den - 1));
-		in_simu[len_den - 1] = in;
+		memcpy(in_simu, in_simu + 1, 4 * (temp_len - 1));
+		in_simu[temp_len - 1] = in;
 
 		for (uint8_t i = 0; i < len_num; i++)
 		{
-			out += in_simu[len_num - 1 - i] * Num[i];
+				out += in_simu[len_num - 1 - i] * Num[i];	
 		}
+
 		if (len_den > 1)
 		{
 			for (uint8_t i = 1; i < len_den; i++)
 			{
 				out -= out_simu[len_den - i - 1] * Den[i];
 			}
-			memcpy(out_simu, out_simu + 1, 4 * (len_den - 2));
+			memcpy(out_simu, out_simu + 1, 4 * (temp_len - 2));
 			out_simu[len_den - 2] = out;
 		}
 

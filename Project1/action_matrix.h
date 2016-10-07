@@ -22,7 +22,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
 #include <iostream>
-#include "config_default.h"
+using namespace std;
 /* Exported enum -------------------------------------------------------------*/
 enum {
 	ERR_EQUAL = 0,
