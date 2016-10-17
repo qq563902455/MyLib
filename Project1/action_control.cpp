@@ -41,9 +41,6 @@ static action_matrix *prdata;
 static float *in_st;
 static uint32_t count_ident = 0;
 static float out_last = 0;
-
-static float *out_simu;
-static float *in_simu;
 /* Extern   variables ---------------------------------------------------------*/
 /* Extern   function prototypes -----------------------------------------------*/
 /* Private  function prototypes -----------------------------------------------*/
@@ -339,7 +336,7 @@ void control_model::model_ident(void)
 		}
 	}
 }
-float control_model::step(float in, uint8_t cmd) const
+float control_model::step(float in, uint8_t cmd)
 {
 	static uint8_t flag = 0;
 	float out = 0;

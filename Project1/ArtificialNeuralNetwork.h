@@ -25,8 +25,9 @@
 /* Exported constants --------------------------------------------------------*/
 enum
 {
-	SIGMOID = 0,
-    TANH,
+	FUN_LOGSIG = 0,
+    FUN_TANSIG,
+	FUN_PURELIN,
 	SPECIAL
 };
 /* Exported macro ------------------------------------------------------------*/
@@ -42,12 +43,27 @@ class BP_ANN
 	  float **w_R;          //从隐藏层节点到输出层节点链接的权重
 	  float *b_L;           //隐藏层节点的阈值
 	  float *b_R;           //输出层节点的阈值
+
+	  float **w_L_last;
+	  float **w_R_last;
+	  float *b_L_last;
+	  float *b_R_last;
+
+	  uint8_t hidelayer_fun = FUN_LOGSIG;
+	  uint8_t outport_fun = FUN_TANSIG;
   public:
-	  BP_ANN(uint8_t in, uint8_t hide, uint8_t out, float **data_l, float **data_r, float *bL, float *bR);
-	  BP_ANN(uint8_t in, uint8_t hide, uint8_t out);
+
+	  float a_study = 0.5f;
+	  float a_keep = 0.05f;
+
+	  BP_ANN(uint8_t in, uint8_t hide, uint8_t out, float **data_l,   float **data_r,
+		                                            float *bL,        float *bR,
+		                                            uint8_t hide_fun, uint8_t out_fun);
+	  BP_ANN(uint8_t in, uint8_t hide, uint8_t out, uint8_t hide_fun, uint8_t out_fun);
 	  ~BP_ANN();
 	  void out(float *indata,float *outdata);
-	  void study(float *indata, const float *outdata);
+	  float study(float *indata, const float *outdata);
+	  void printf(void);
 
 };
 

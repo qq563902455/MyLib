@@ -58,7 +58,7 @@ public:
 	uint8_t getCD()     const;
 	void model_iddata(float in,float out) const;
 	void model_ident(void);
-	float step(float in, uint8_t cmd) const;
+	float step(float in, uint8_t cmd);
 	~control_model();
 private:
 	uint8_t len_num;
@@ -66,6 +66,9 @@ private:
 	float* Num;
 	float* Den;
 	uint8_t d_or_c;
+
+	float *out_simu;
+	float *in_simu;
 	
 };
 

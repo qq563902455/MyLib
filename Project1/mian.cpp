@@ -5,60 +5,70 @@
 #include "action_control.h"
 #include "action_PID.h"
 
+#include <time.h>
 
 using namespace std;
 
+
 int main(void)
 {
-	//ifstream file("D:\\常用未整理\\代码类\\自适应控制\\test.csv");
-	//float test;
-	//
-	//file >> test;
-	//file >> test;
-	//cout << test << endl;
-	//file.close();
+	BP_ANN gb_study(2, 10, 1, FUN_TANSIG, FUN_TANSIG);
+	static float out[1] = { 0 };
+	static float in[2] = { 0,0 };
 
-	//BP_ANN test(1, 5, 1);
-	//float in;
-	//float out;
-	//for (uint32_t i = 0; i < 100; i++)
-	//{
-	//	in = 49 / 100.0f;
-	//	test.out(&in, &out);
-	//	cout << out << endl;
-	//	for (uint32_t j = 0; j < 50; j++)
-	//	{
-	//		out = 0;
-	//		in = j / 100.0f;
-	//		test.study(&in, &out);
-	//	}
-	//	for (uint32_t j = 50; j < 100; j++)
-	//	{
-	//		out = 1;
-	//		in = j / 100.0f;
-	//		test.study(&in, &out);
-	//	}
-	//	
-	//}
-	//in = 49/100.0f;
-	//test.out(&in, &out);
-	//cout << out << endl;
+	srand((int)time(0));
 
-	float num[3] = { 0.01,0.0083887,0.007234 };
-	float den[3] = { 1,-0.7714,-0.2291};
-	float out=0;
+	gb_study.a_study = 0.01;
+	gb_study.a_keep = 0.05;
 
-	control_model test(0, num, den, 3, 3);
-	action_PID ctr;
+	while (1)
+	{
+		float err = 0;
+		for (uint32_t i = 0; i < 100000; i++)
+		{
+			in[0] = rand() % 200 / 100.0f - 1;
+			in[1] = rand() % 200 / 100.0f - 1;
+			out[0] = (in[0] * in[0] + in[1] * in[1]) / 2.0f;
+			gb_study.study(in, out);
+		}
+		
 
-	ctr.OptTuning(test, 100, 0.01, 1);
+		
+		for (uint32_t i = 0; i < 1000; i++)
+		{
+			in[0] = rand() % 200 / 100.0f - 1;
+			in[1] = rand() % 200 / 100.0f - 1;
+			out[0] = 0.0f;
+			gb_study.out(in, out);
 
-	cout << ctr.Kp << endl;
-	cout << ctr.Ki << endl;
+			if ((in[0]*in[0]+ in[1]*in[1]) <= 0.01)
+				continue;
 
+			err += fabs((in[0] * in[0] + in[1] * in[1]) / 2.0 - out[0])/ (in[0] * in[0] + in[1] * in[1]);
+		}
+		cout << "err: " <<err << endl;
+		if (err < 10)
+			break;
 
+	}
+	gb_study.printf();
+	for (;;)
+	{
+		//in[0] = rand() % 200 / 100.0f - 1;
+		//in[1] = rand() % 200 / 100.0f - 1;
 
+		cin >> in[0];
+		cin >> in[1];
+
+		out[0] = 0.0f;
+		gb_study.out(in, out);
+
+		cout << "in0: " << in[0] << endl;
+		cout << "in1: " << in[1] << endl;
+		cout << "out: " << out[0] << endl;
+		cout << "actval: " << (in[0] * in[0] + in[1] * in[1]) / 2.0f << endl;
+		cout << endl;
+	}
 	getchar();
-
 	return 0;
 }
