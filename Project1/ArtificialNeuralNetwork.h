@@ -36,9 +36,6 @@ enum
 class BP_ANN
 {
   private:
-	  uint8_t in_port;      //输入节点数
-	  uint8_t hide_layer;   //隐藏层节点数
-	  uint8_t out_port;     //输出层节点数
 	  float **w_L;          //从输入层节点到隐藏层节点链接的权重
 	  float **w_R;          //从隐藏层节点到输出层节点链接的权重
 	  float *b_L;           //隐藏层节点的阈值
@@ -52,7 +49,9 @@ class BP_ANN
 	  uint8_t hidelayer_fun = FUN_LOGSIG;
 	  uint8_t outport_fun = FUN_TANSIG;
   public:
-
+	  uint8_t in_port;      //输入节点数
+	  uint8_t hide_layer;   //隐藏层节点数
+	  uint8_t out_port;     //输出层节点数
 	  float a_study = 0.5f;
 	  float a_keep = 0.05f;
 
@@ -63,6 +62,7 @@ class BP_ANN
 	  ~BP_ANN();
 	  void out(float *indata,float *outdata);
 	  float study(float *indata, const float *outdata);
+	  float study(const float *indata, const float err,const float *diff);
 	  void printf(void);
 
 };

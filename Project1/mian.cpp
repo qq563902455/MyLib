@@ -9,66 +9,53 @@
 
 using namespace std;
 
+float num[] = { 0.8f ,0 };
+float den[] = { 0.7f ,-1.0f };
+float act_val=0;
+float ctr = 0;
 
 int main(void)
 {
-	BP_ANN gb_study(2, 10, 1, FUN_TANSIG, FUN_TANSIG);
-	static float out[1] = { 0 };
-	static float in[2] = { 0,0 };
+	control_model gb(DiscreteSys, num, den, 2, 2);
+	BP_ANN control(3, 5, 3, FUN_TANSIG, FUN_LOGSIG);
+	BP_ANN model(2, 3, 1, FUN_TANSIG, FUN_TANSIG);
+	BP_PID test(1, 1, 0);
 
-	srand((int)time(0));
 
-	gb_study.a_study = 0.01;
-	gb_study.a_keep = 0.05;
+	cout << "Kp:  " << test.Kp << endl;
+	cout << "Ki:  " << test.Ki << endl;
+	cout << "Kd:  " << test.Kd << endl;
 
-	while (1)
+	for (uint16_t j = 0; j < 1000; j++)
 	{
-		float err = 0;
-		for (uint32_t i = 0; i < 100000; i++)
+		for (uint32_t i = 0; i < 100; i++)
 		{
-			in[0] = rand() % 200 / 100.0f - 1;
-			in[1] = rand() % 200 / 100.0f - 1;
-			out[0] = (in[0] * in[0] + in[1] * in[1]) / 2.0f;
-			gb_study.study(in, out);
+			if (j % 2 == 0)
+			{
+				ctr = test.BP_PID_out(control, model, 0.5, act_val);
+			}
+			else
+				ctr = test.BP_PID_out(control, model, 1, act_val);
+			act_val = gb.step(ctr, STEPING);
 		}
-		
-
-		
-		for (uint32_t i = 0; i < 1000; i++)
-		{
-			in[0] = rand() % 200 / 100.0f - 1;
-			in[1] = rand() % 200 / 100.0f - 1;
-			out[0] = 0.0f;
-			gb_study.out(in, out);
-
-			if ((in[0]*in[0]+ in[1]*in[1]) <= 0.01)
-				continue;
-
-			err += fabs((in[0] * in[0] + in[1] * in[1]) / 2.0 - out[0])/ (in[0] * in[0] + in[1] * in[1]);
-		}
-		cout << "err: " <<err << endl;
-		if (err < 10)
-			break;
-
 	}
-	gb_study.printf();
-	for (;;)
+	
+
+	for (uint32_t i = 0; i < 100; i++)
 	{
-		//in[0] = rand() % 200 / 100.0f - 1;
-		//in[1] = rand() % 200 / 100.0f - 1;
+		ctr = test.BP_PID_out(control, model, 0.5, act_val);
 
-		cin >> in[0];
-		cin >> in[1];
+		act_val = gb.step(ctr, STEPING);
 
-		out[0] = 0.0f;
-		gb_study.out(in, out);
-
-		cout << "in0: " << in[0] << endl;
-		cout << "in1: " << in[1] << endl;
-		cout << "out: " << out[0] << endl;
-		cout << "actval: " << (in[0] * in[0] + in[1] * in[1]) / 2.0f << endl;
 		cout << endl;
+		cout << "U:  " << ctr << endl;
+		cout << "Y:  " << act_val << endl;
+		cout << "Kp:  " << test.Kp << endl;
+		cout << "Ki:  " << test.Ki << endl;
+		cout << "Kd:  " << test.Kd << endl;
 	}
+
+
 	getchar();
 	return 0;
 }

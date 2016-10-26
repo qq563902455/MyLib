@@ -504,6 +504,215 @@ float BP_ANN::study(float *indata, const float *outdata)
 
 	return err;
 }
+
+float BP_ANN::study(const float *indata, const float err,const float *diff)
+{
+	float Err = 0;
+
+	float *hide_out;  //正确输出（训练）
+	float *study_out; //神经网络本身输出
+
+	float *hide_v;    //隐藏层节点的V
+	float *out_v;     //输出层节点的V
+
+	hide_out = new float[hide_layer];
+	hide_v = new float[hide_layer];
+
+	study_out = new float[out_port];
+	out_v = new float[out_port];
+
+	for (uint8_t i = 0; i < hide_layer; i++)
+	{
+		/* 计算隐藏层V */
+		hide_v[i] = 0.0f;
+		for (uint8_t j = 0; j < in_port; j++)
+		{
+			hide_v[i] += indata[j] * w_L[j][i];
+		}
+		hide_v[i] += b_L[i];
+		_log_("hide_layer_v:" << hide_v[i]);
+		/* 计算隐藏层输出 */
+		switch (hidelayer_fun)
+		{
+			case FUN_LOGSIG:
+				hide_out[i] = LOGSIG(hide_v[i]);
+				break;
+			case FUN_TANSIG:
+				hide_out[i] = TANSIG(hide_v[i]);
+				break;
+			case FUN_PURELIN:
+				hide_out[i] = PURELIN(hide_v[i]);
+				break;
+			default:
+				hide_out[i] = LOGSIG(hide_v[i]);
+				break;
+		}
+		_log_("hide_layer_out" << hide_out[i]);
+	}
+
+
+	for (uint8_t i = 0; i < out_port; i++)
+	{
+		/* 计算输出层V */
+		out_v[i] = 0;
+		for (uint8_t j = 0; j < hide_layer; j++)
+		{
+			out_v[i] += hide_out[j] * w_R[j][i];
+		}
+		out_v[i] += b_R[i];
+		_log_("out_layer_v:" << out_v[i]);
+		/* 计算输出层输出 */
+		switch (outport_fun)
+		{
+			case FUN_LOGSIG:
+				study_out[i] = LOGSIG(out_v[i]);
+				break;
+			case FUN_TANSIG:
+				study_out[i] = TANSIG(out_v[i]);
+				break;
+			case FUN_PURELIN:
+				study_out[i] = PURELIN(out_v[i]);
+			default:
+				study_out[i] = TANSIG(out_v[i]);
+				break;
+		}
+		_log_("out_layer_v:" << study_out[i]);
+	}
+
+	/* 反向传播 */
+	for (uint16_t i = 0; i < hide_layer; i++)
+	{
+		float temp = 0;
+		float temp_w_L;
+		float temp_b_L;
+		for (uint16_t k = 0; k < out_port; k++)
+		{
+			switch (outport_fun)
+			{
+				case FUN_LOGSIG:
+					temp += (float)((err * diff[k])*DIFF_LOGSIG(out_v[k])*w_R[i][k]);
+					break;
+				case FUN_TANSIG:
+					temp += (float)((err * diff[k])*DIFF_TANSIG(out_v[k])*w_R[i][k]);
+					break;
+				case FUN_PURELIN:
+					temp += (float)((err * diff[k])*DIFF_PURELIN(out_v[k])*w_R[i][k]);
+					break;
+				default:
+					temp += (float)((err * diff[k])*DIFF_TANSIG(out_v[k])*w_R[i][k]);
+					break;
+			}
+		}
+		/* 改变隐藏层的输入链接权重 */
+		for (uint16_t j = 0; j < in_port; j++)
+		{
+
+			temp_w_L = w_L[j][i];
+			switch (hidelayer_fun)
+			{
+				case FUN_LOGSIG:
+					w_L[j][i] += (float)(a_study*indata[j] * DIFF_LOGSIG(hide_v[i])*temp) + a_keep*(w_L[j][i] - w_L_last[j][i]);
+					break;
+				case FUN_TANSIG:
+					w_L[j][i] += (float)(a_study*indata[j] * DIFF_TANSIG(hide_v[i])*temp) + a_keep*(w_L[j][i] - w_L_last[j][i]);
+					break;
+				case FUN_PURELIN:
+					w_L[j][i] += (float)(a_study*indata[j] * DIFF_PURELIN(hide_v[i])*temp) + a_keep*(w_L[j][i] - w_L_last[j][i]);
+					break;
+				default:
+					w_L[j][i] += (float)(a_study*indata[j] * DIFF_LOGSIG(hide_v[i])*temp) + a_keep*(w_L[j][i] - w_L_last[j][i]);
+					break;
+			}
+
+			w_L_last[j][i] = temp_w_L;
+
+			_log_("w_L:" << j << i << ':' << w_L[j][i]);
+		}
+		/* 改变隐藏层的阈值 */
+		temp_b_L = b_L[i];
+		switch (hidelayer_fun)
+		{
+			case FUN_LOGSIG:
+				b_L[i] += (float)(a_study*DIFF_LOGSIG(hide_v[i])*temp) + a_keep*(b_L[i] - b_L_last[i]);
+				break;
+			case FUN_TANSIG:
+				b_L[i] += (float)(a_study*DIFF_TANSIG(hide_v[i])*temp) + a_keep*(b_L[i] - b_L_last[i]);
+				break;
+			case FUN_PURELIN:
+				b_L[i] += (float)(a_study*DIFF_PURELIN(hide_v[i])*temp) + a_keep*(b_L[i] - b_L_last[i]);
+				break;
+			default:
+				b_L[i] += (float)(a_study*DIFF_LOGSIG(hide_v[i])*temp) + a_keep*(b_L[i] - b_L_last[i]);
+				break;
+		}
+
+		b_L_last[i] = temp_b_L;
+
+		_log_("b_L:" << i << ':' << b_L[i]);
+	}
+	for (uint16_t i = 0; i < out_port; i++)
+	{
+		float temp_w_R;
+		float temp_b_R;
+		/* 改变输出层的输入链接权重 */
+		for (uint16_t j = 0; j < hide_layer; j++)
+		{
+			temp_w_R = w_R[j][i];
+
+			switch (outport_fun)
+			{
+				case FUN_LOGSIG:
+					w_R[j][i] += (float)(a_study*(err * diff[i])*hide_out[j] * DIFF_LOGSIG(out_v[i])) + a_keep*(w_R[j][i] - w_R_last[j][i]);
+					break;
+				case FUN_TANSIG:
+					w_R[j][i] += (float)(a_study*(err * diff[i])*hide_out[j] * DIFF_TANSIG(out_v[i])) + a_keep*(w_R[j][i] - w_R_last[j][i]);
+					break;
+				case FUN_PURELIN:
+					w_R[j][i] += (float)(a_study*(err * diff[i])*hide_out[j] * DIFF_PURELIN(out_v[i])) + a_keep*(w_R[j][i] - w_R_last[j][i]);
+					break;
+				default:
+					w_R[j][i] += (float)(a_study*(err * diff[i])*hide_out[j] * DIFF_TANSIG(out_v[i])) + a_keep*(w_R[j][i] - w_R_last[j][i]);
+					break;
+			}
+
+			w_R_last[j][i] = temp_w_R;
+
+			_log_("w_R:" << j << i << ':' << w_R[j][i]);
+		}
+		/* 改变输出层的阈值 */
+		temp_b_R = b_R[i];
+
+		switch (outport_fun)
+		{
+			case FUN_LOGSIG:
+				b_R[i] += (float)(a_study*(err * diff[i])*  DIFF_LOGSIG(out_v[i])) + a_keep*(b_R[i] - b_R_last[i]);
+				break;
+			case FUN_TANSIG:
+				b_R[i] += (float)(a_study*(err * diff[i])*  DIFF_TANSIG(out_v[i])) + a_keep*(b_R[i] - b_R_last[i]);
+				break;
+			case FUN_PURELIN:
+				b_R[i] += (float)(a_study*(err * diff[i])*  DIFF_PURELIN(out_v[i])) + a_keep*(b_R[i] - b_R_last[i]);
+				break;
+			default:
+				b_R[i] += (float)(a_study*(err * diff[i])*  DIFF_TANSIG(out_v[i])) + a_keep*(b_R[i] - b_R_last[i]);
+				break;
+		}
+		b_R_last[i] = temp_b_R;
+
+		_log_("b_R:" << i << ':' << b_R[i]);
+	}
+
+
+	delete[] hide_out;
+	delete[] hide_v;
+
+	delete[] study_out;
+	delete[] out_v;
+
+	return Err;
+}
+
+
 void BP_ANN::printf(void)
 {
 	for (uint16_t i = 0; i < in_port; i++)

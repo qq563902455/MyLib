@@ -39,11 +39,10 @@
 */
 float action_PID::out(float err)
 {
-	float err_vell=0;
 	float out;
 
 	err_sum += err;
-	err_vell = err - last_err;
+	err_v = err - last_err;
 	last_err = err;
 
 	if (err_sum*Ki >= err_sum_max)
@@ -54,7 +53,7 @@ float action_PID::out(float err)
 	{
 		err_sum = -err_sum_max / Ki;
 	}
-	out = Kp*err + Ki*err_sum + Kd*err_vell;
+	out = Kp*err + Ki*err_sum + Kd*err_v;
 
 	if (out > out_max)
 	{
@@ -232,4 +231,92 @@ void action_PID::OptTuning(control_model &g, float T, float test_in)
 
 	}
 }
+BP_PID::BP_PID(uint8_t nA, uint8_t nB, uint8_t nD)
+{
+	na = nA;
+	nb = nB;
+	nd = nD;
+
+
+	data_st= new float[nA + nB + nD];
+
+
+	for (uint16_t i = 0; i < nA + nB + nD; i++)
+	{
+		data_st[i] = 0;
+	}
+
+	controller_out = data_st;
+	object_out = data_st + nB + nD;
+
+}
+BP_PID::~BP_PID()
+{
+	delete[] data_st;
+}
+float BP_PID::BP_PID_out(BP_ANN &control, BP_ANN &model, float set_val, float act_val)
+{
+	float err, temp_out_old, temp_out_new;
+	float pid_in[3];
+	float diff;
+	float diff_in[3];
+	float pid_out[3];
+
+	/* 调整被控对象模型 */
+	model.study(data_st, &act_val);
+
+	/* 获得仿真输出，为求入输出之间的导数关系做准备 */
+	model.out(data_st, &temp_out_old);
+
+	/* 更新仿真输入，为求入输出之间的导数关系做准备 */
+	if (fabs(controller_out[nb + nd - 1]) > 0.01f)
+	{
+		controller_out[nb + nd - 1] *= 1.01f;
+		/* 获得仿真输出，为求入输出之间的导数关系做准备 */
+		model.out(data_st, &temp_out_new);
+		/* 计算仿真的输入输出之间的导数关系 */
+		diff = (temp_out_new - temp_out_old) / (controller_out[nb + nd - 1] / 101);
+	}
+	else
+	{
+		controller_out[nb + nd - 1] += 0.001f;
+		/* 获得仿真输出，为求入输出之间的导数关系做准备 */
+		model.out(data_st, &temp_out_new);
+		/* 计算仿真的输入输出之间的导数关系 */
+		diff = (temp_out_new - temp_out_old) / 0.001f;
+	}
+		
+	diff_in[0] = diff*last_err;
+	diff_in[1] = diff*err_sum;
+	diff_in[2] = diff*err_v;
+
+	pid_in[0] = last_err;
+	pid_in[1] = err_sum;
+	pid_in[2] = err_v;
+
+	/* 误差计算 */
+	err = set_val - act_val;
+    /* 训练用于调整PID的神经网络 */
+	control.study(pid_in, err, diff_in);
+	/* 更新BP神经网络的输入，该神经网络的输入是误差的相关信息，输出为PID的值 */
+	pid_in[0] = err;
+	pid_in[1] = err + err_sum;
+	pid_in[2] = err - last_err;
+
+	/* 根据误差情况更新PID的值 */
+	control.out(pid_in, pid_out);
+	Kp = pid_out[0];
+	Ki = pid_out[1];
+	Kd = pid_out[2];
+
+	/* 更新输入输出数据 */
+	memcpy(controller_out, controller_out + 1, 4 * (nb + nd - 1));
+	memcpy(object_out, object_out + 1, 4 * (na - 1));
+	controller_out[nb + nd - 1] = this->out(err);
+	object_out[na - 1] = act_val;
+
+	return controller_out[nb + nd - 1];
+}
+
+
 /************************ (C) COPYRIGHT 2016 ACTION *****END OF FILE****/
