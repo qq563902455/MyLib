@@ -212,6 +212,10 @@ double* const action_matrix::operator [] (size_t i)
 {
 	return data[i];
 }
+const double * action_matrix::operator[](size_t i) const
+{
+	return data[i];
+}
 /**
  * @brief  矩阵赋值
  * @attention 这是一个深度复制

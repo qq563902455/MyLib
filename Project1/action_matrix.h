@@ -62,6 +62,7 @@ public:
 	void set_data(uint32_t x, uint32_t y, double val) const;
 	action_matrix& operator = (const action_matrix& y);
 	double* const operator [] (size_t i);
+	const double* operator [] (size_t i) const;
 };
 
 inline uint32_t action_matrix::get_row() const { return row; }
@@ -69,6 +70,7 @@ inline uint32_t action_matrix::get_column() const { return column; }
 
 inline size_t action_matrix::size() const { return _size; }
 inline bool action_matrix::empty() const { return data == nullptr; }
+
 
 std::ostream &operator<<(std::ostream & os, action_matrix &item);
 
