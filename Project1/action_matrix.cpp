@@ -41,7 +41,8 @@ void action_matrix::create(uint32_t len1, uint32_t len2)
 {
 	row = len1;
 	column = len2;
-	_size = len1 * len2;
+	refcount = 0;
+	data = 0;
 
 	delete_data();
 
@@ -53,19 +54,6 @@ void action_matrix::create(uint32_t len1, uint32_t len2)
 	
 	refcount = new int(1);
 }
-/**
-* @brief  矩阵构造函数
-* @param  None
-* @retval None
-*/
-action_matrix::action_matrix()
-{
-	row = column = 0;
-	refcount = nullptr;
-	data = nullptr;
-	_size = 0;
-}
-
 /**
 * @brief        矩阵构造函数
 * @param  len1: 矩阵的行数
@@ -127,7 +115,7 @@ action_matrix::action_matrix(uint32_t len1, uint32_t len2, uint8_t kind)
 * @attention 这是一个浅复制
 */
 action_matrix::action_matrix(const action_matrix &m)
-	:data(m.data), row(m.row), column(m.column), refcount(m.refcount), _size(m._size)
+	:data(m.data), row(m.row), column(m.column), refcount(m.refcount)
 {
 	if (refcount)
 		refAdd(refcount, 1);
@@ -150,10 +138,10 @@ void action_matrix::delete_data(void)
 			delete[] data[i];
 		}
 		delete[] data;
-		data = nullptr;
+		data = 0;
 
 		delete refcount;
-		refcount = nullptr;
+		refcount = 0;
 	}
 }
 
@@ -225,8 +213,6 @@ const double * action_matrix::operator[](size_t i) const
  */
 action_matrix& action_matrix::operator = (const action_matrix& y)
 {
-	create(y.row, y.column);
-
 	for (uint32_t i = 0; i <row; i++)
 	{
 		for (uint32_t j = 0; j < column; j++)

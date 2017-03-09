@@ -1,58 +1,29 @@
-#include <fstream>  
-#include <string>  
-#include <iostream>  
-#include "ArtificialNeuralNetwork.h"
-#include "action_control.h"
-#include "action_PID.h"
 #include "action_matrix.h"
+#include "flpFilter.h"
+#include <iostream>
+
 using namespace std;
 
-float num[] = { 0.8f ,0 };
-float den[] = { 0.9f ,-0.8f };
-float act_val=0;
-float ctr = 0;
+float inData[10] = { 0.1f,1.1f,2.1f,3.1f,4.1f,
+					5.1f,6.1f,7.1f,8.1f,9.1f };
 
-int main(void)
-{   
-	control_model gb(DiscreteSys, num, den, 2, 2);
-	BP_ANN control(3, 5, 3, FUN_TANSIG, FUN_LOGSIG);
-	BP_ANN model(2, 3, 1, FUN_TANSIG, FUN_TANSIG);
-	BP_PID test(1, 1, 0);
-
-	cout << "Kp:  " << test.Kp << endl;
-	cout << "Ki:  " << test.Ki << endl;
-	cout << "Kd:  " << test.Kd << endl;
-
-	for (uint16_t j = 0; j < 1000; j++)
+int main(void) {
+	flpFilter test(3,1,0.1);
+	
+	for (uint16_t i = 0; i < 500; i++)
 	{
-		for (uint32_t i = 0; i < 100; i++)
-		{
-			if (j % 2 == 0)
-			{
-				ctr = test.BP_PID_out(control, model, 0.5, act_val);
-			}
-			else
-				ctr = test.BP_PID_out(control, model, 1, act_val);
-			act_val = gb.step(ctr, STEPING);
+		float re;
+		if (i < 10) {
+			 re = test.out(inData[i]);
 		}
-	}
-
-	for (uint32_t i = 0; i < 100; i++)
-	{
-		ctr = test.BP_PID_out(control, model, 1.5, act_val);
-
-		act_val = gb.step(ctr, STEPING);
-
-		cout << endl;
-		cout << "U:  " << ctr << endl;
-		cout << "Y:  " << act_val << endl;
-		cout << "Kp:  " << test.Kp << endl;
-		cout << "Ki:  " << test.Ki << endl;
-		cout << "Kd:  " << test.Kd << endl;
+		else
+		{
+			re = test.out(10);
+		}
+		cout << "filter out: "<< re << endl;
 	}
 
 
 	getchar();
 	return 0;
 }
-

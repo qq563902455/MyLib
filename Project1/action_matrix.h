@@ -42,14 +42,12 @@ class action_matrix
 private:
 	uint32_t  row;
 	uint32_t  column;
-	size_t _size;
 	double **data;
 	int *refcount;
 	int refAdd(int * addr, int delta);
 	void create(uint32_t len1, uint32_t len2);
 	void delete_data(void);
 public:
-	action_matrix();
 	action_matrix(uint32_t len1, uint32_t len2);
 	action_matrix(uint32_t len1, uint32_t len2, uint8_t kind);
 	action_matrix(const action_matrix &m);
@@ -67,8 +65,6 @@ public:
 
 inline uint32_t action_matrix::get_row() const { return row; }
 inline uint32_t action_matrix::get_column() const { return column; }
-
-inline size_t action_matrix::size() const { return _size; }
 inline bool action_matrix::empty() const { return data == nullptr; }
 
 
