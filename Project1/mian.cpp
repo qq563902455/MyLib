@@ -1,28 +1,17 @@
 #include "action_matrix.h"
-#include "flpFilter.h"
 #include <iostream>
 
 using namespace std;
 
-float inData[10] = { 0.1f,1.1f,2.1f,3.1f,4.1f,
-					5.1f,6.1f,7.1f,8.1f,9.1f };
 
 int main(void) {
-	flpFilter test(3,1,0.1);
-	
-	for (uint16_t i = 0; i < 500; i++)
-	{
-		float re;
-		if (i < 10) {
-			 re = test.out(inData[i]);
-		}
-		else
-		{
-			re = test.out(10);
-		}
-		cout << "filter out: "<< re << endl;
-	}
+	action_matrix x(3, 3);
+	x[0][0] = 1; x[0][1] = 2; x[0][2] = 3;
+	x[1][0] = 3; x[1][1] = 2; x[1][2] = 1;
+	x[2][0] = 2; x[2][1] = 8; x[2][2] = 5;
 
+	cout << ~x << endl;
+	cout << x*(~x) << endl;
 
 	getchar();
 	return 0;

@@ -427,7 +427,7 @@ action_matrix operator !(action_matrix &x)
 }
 /**
 * @brief  矩阵求逆
-* @attention 使用了delete_data，应该需要修改，太复杂了，不是我写的不好改
+* @attention 
 * @param  none
 * @retval none
 */
@@ -438,97 +438,48 @@ action_matrix operator ~(action_matrix &x) //矩阵求逆
 		throw ERR_INVERSE;
 	}
 
-	action_matrix matrix_L(x.get_column(), x.get_column());
-	action_matrix matrix_U(x.get_column(), x.get_column());
-	action_matrix matrix_L_Inverse(x.get_column(), x.get_column());
-	action_matrix matrix_U_Inverse(x.get_column(), x.get_column());
-	action_matrix result(x.get_column(), x.get_column());
-	double temp_val = 0;
-	double temp_val2 = 0;
-	for (uint32_t i = 0; i < x.get_row(); i++)
+	action_matrix result(x.get_row(), x.get_row(),MATRIX_I);
+	action_matrix x_copy(x.get_row(), x.get_column());
+	x_copy = x;
+
+	for (uint32_t i = 0; i < x_copy.get_column(); i++)
 	{
-		for (uint32_t j = i; j < x.get_row(); j++)
+		//选主元
+		uint32_t idMax=i;
+		for (uint32_t j = i + 1; j < x_copy.get_row(); j++)
 		{
-			if (j == i)
+			if (x_copy[j][i] > x_copy[idMax][i])
 			{
-				matrix_L.set_data(i, j, 1);
+				idMax = j;
+			}
+		}
+		if (idMax != 0)
+		{
+			rowTrans(x_copy, i, idMax);
+			rowTrans(result, i, idMax);
+		}
+			
+
+		for (uint32_t j = 0; j < x_copy.get_row(); j++)
+		{
+			if (fabs(x_copy[i][i]) < 0.000001)
+			{
+				throw ERR_INVERSE;
+			}
+			if (j != i)
+			{
+				double temp = -x_copy[j][i] / x_copy[i][i];
+				rowTrans(x_copy, i, j, temp);
+				rowTrans(result, i, j, temp);
 			}
 			else
 			{
-				matrix_L.set_data(i, j, 0);
-				matrix_U.set_data(j, i, 0);
+				double temp = 1 / x_copy[i][i];
+				rowTrans(x_copy, i, temp);
+				rowTrans(result, i, temp);
 			}
 		}
 	}
-	for (uint32_t i = 0; i < x.get_row(); i++)
-	{
-		for (uint32_t j = 0; j < x.get_row(); j++)
-		{
-			matrix_L_Inverse.set_data(i, j, 0);
-			matrix_U_Inverse.set_data(i, j, 0);
-		}
-	}
-
-	/* LU分解 */
-	for (uint32_t i = 0; i < x.get_row(); i++)
-	{
-		matrix_U.set_data(0, i, x.get_data(0, i));
-		matrix_L.set_data(i, 0, x.get_data(i, 0) / matrix_U.get_data(0, 0));
-	}
-	for (uint32_t i = 1; i < x.get_row(); i++)
-	{
-		for (uint32_t j = i; j < x.get_row(); j++)
-		{
-			temp_val = 0;
-			for (uint32_t w = 0; w <= i - 1; w++)
-			{
-				temp_val = temp_val + matrix_L.get_data(i, w)*matrix_U.get_data(w, j);
-			}
-			matrix_U.set_data(i, j, x.get_data(i, j) - temp_val);
-		}
-		for (uint32_t j = i + 1; j < x.get_row(); j++)
-		{
-			temp_val = 0;
-			for (uint32_t w = 0; w <= i - 1; w++)
-			{
-				temp_val = temp_val + matrix_L.get_data(j, w)*matrix_U.get_data(w, i);
-			}
-			matrix_L.set_data(j, i, (x.get_data(j, i) - temp_val) / matrix_U.get_data(i, i));
-		}
-	}
-	matrix_L = !matrix_L;
-	temp_val = 0;
-	temp_val2 = 0;
-	for (uint32_t j = x.get_column() - 1; (j+2) >= (2); j--)
-	{
-		for (uint32_t i = x.get_column() - 1; (i+2) >= (2); i--)
-		{
-			temp_val = 0;
-			temp_val2 = 0;
-			for (uint32_t w = x.get_column() - 1; (w+2) > (i+2); w--)
-			{
-				temp_val = temp_val + matrix_U.get_data(i, w)*matrix_U_Inverse.get_data(w, j);
-				temp_val2 = temp_val2 + matrix_L.get_data(i, w)*matrix_L_Inverse.get_data(w, j);
-			}
-			if (i == j)
-			{
-				matrix_U_Inverse.set_data(i, j, (1 - temp_val) / matrix_U.get_data(i, i));
-				matrix_L_Inverse.set_data(i, j, (1 - temp_val2) / matrix_L.get_data(i, i));
-			}
-			else
-			{
-				matrix_U_Inverse.set_data(i, j, (0 - temp_val) / matrix_U.get_data(i, i));
-				matrix_L_Inverse.set_data(i, j, (0 - temp_val2) / matrix_L.get_data(i, i));
-			}
-		}
-	}
-	result = matrix_U_Inverse*(!matrix_L_Inverse);
-
-	//matrix_U_Inverse.delete_data();
-	//matrix_L_Inverse.delete_data();
-	//matrix_U.delete_data();
-	//matrix_L.delete_data();
-
 	return result;
 }
 /**
@@ -566,6 +517,55 @@ double operator *(action_matrix &x)
 	return out;
 }
 
+
+void rowTrans(action_matrix& x, uint32_t rowid, double scale)
+{
+	for (uint32_t i = 0; i < x.get_column(); i++)
+	{
+		x[rowid][i] = x[rowid][i] * scale;
+	}
+}
+void rowTrans(action_matrix& x, uint32_t rowid, uint32_t rowid2)
+{
+	for (uint32_t i = 0; i < x.get_column(); i++)
+	{
+		double temp;
+		temp = x[rowid][i];
+		x[rowid][i] = x[rowid2][i];
+		x[rowid2][i] = temp;
+	}
+}
+void rowTrans(action_matrix& x, uint32_t rowid, uint32_t rowid2,double scale)
+{
+	for (uint32_t i = 0; i < x.get_column(); i++)
+	{
+		x[rowid2][i]+= x[rowid][i]* scale;
+	}
+}
+void columnTrans(action_matrix& x, uint32_t columnid, double scale)
+{
+	for (uint32_t i = 0; i < x.get_row(); i++)
+	{
+		x[i][columnid] = x[i][columnid] * scale;
+	}
+}
+void columnTrans(action_matrix& x, uint32_t columnid, uint32_t columnid2)
+{
+	for (uint32_t i = 0; i < x.get_row(); i++)
+	{
+		double temp;
+		temp = x[i][columnid];
+		x[i][columnid] = x[i][columnid2];
+		x[i][columnid2] = temp;
+	}
+}
+void columnTrans(action_matrix& x, uint32_t columnid, uint32_t columnid2, double scale)
+{
+	for (uint32_t i = 0; i < x.get_row(); i++)
+	{
+		x[i][columnid2] += x[i][columnid] * scale;
+	}
+}
 /**
 * @brief  重载<<输出运算符，矩阵打印自身
 * @param  none
@@ -587,6 +587,5 @@ std::ostream &operator<<(std::ostream & os, action_matrix &item)
 	}
 	return os;
 }
-
 
 /************************ (C) COPYRIGHT 2016 ACTION *****END OF FILE****/

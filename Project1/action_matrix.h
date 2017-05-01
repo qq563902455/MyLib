@@ -70,6 +70,13 @@ inline bool action_matrix::empty() const { return data == nullptr; }
 
 std::ostream &operator<<(std::ostream & os, action_matrix &item);
 
+void rowTrans(action_matrix&, uint32_t, double);
+void rowTrans(action_matrix&, uint32_t, uint32_t);
+void rowTrans(action_matrix&, uint32_t, uint32_t, double);
+
+void columnTrans(action_matrix&, uint32_t, double);
+void columnTrans(action_matrix&, uint32_t, uint32_t);
+void columnTrans(action_matrix&, uint32_t, uint32_t, double);
 
 /* Exported overload ------------------------------------------------------- */
 action_matrix operator + (action_matrix& x, action_matrix& y);
