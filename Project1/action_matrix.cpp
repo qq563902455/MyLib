@@ -30,52 +30,27 @@
 /* Exported class functions ---------------------------------------------------*/
 
 /**
-* @brief        为矩阵分配内存
-* @attention    分配内存分为初次分配和非初次分配，非初次分配内存也就是重新分配内存
-*               这需要检查是否要释放掉之前已经分配好的内存
+* @brief        创建矩阵
 * @param  len1: 矩阵的行数
 * @param  len2: 矩阵的列数
-* @retval None
-*/
-void action_matrix::create(uint32_t len1, uint32_t len2)
-{
-	row = len1;
-	column = len2;
-	refcount = 0;
-	data = 0;
-
-	delete_data();
-
-	// 分配内存
-	data = new double *[len1];
-	for (uint32_t i = 0; i < len1; i++){
-		data[i] = new double[len2];
-	}
-	
-	refcount = new int(1);
-}
-/**
-* @brief        矩阵构造函数
-* @param  len1: 矩阵的行数
-* @param  len2: 矩阵的列数
-* @retval None
-*/
-action_matrix::action_matrix(uint32_t len1, uint32_t len2)
-{
-	create(len1, len2);
-}
-/**
-* @brief        矩阵构造函数
-* @param  len1: 矩阵的行数
-* @param  len2: 矩阵的列数
-* @param  kind: MATRIX_I       单位矩阵
-	            MATRIX_ZERO    全0矩阵
-	            MATRIX_ALL_I   全1矩阵
+* @param  kind: MATRIX_I       单位阵
+MATRIX_ZERO    0矩阵
+MATRIX_ALL_I   所有元素为1的矩阵
 * @retval None
 */
 action_matrix::action_matrix(uint32_t len1, uint32_t len2, uint8_t kind)
 {
-	create(len1, len2);
+	matrix.numRows = len1;
+	matrix.numCols = len2;
+	referCount = 0;
+	matrix.pData = 0;
+	if (len1*len2)
+	{
+		matrix.pData = new double[len1*len2];
+		referCount = new int(0);
+	}
+
+
 	switch (kind)
 	{
 	case MATRIX_I:
@@ -83,24 +58,26 @@ action_matrix::action_matrix(uint32_t len1, uint32_t len2, uint8_t kind)
 			for (uint32_t j = 0; j < len2; j++)
 			{
 				if (i != j)
-					data[i][j] = 0;
+					(*this)[i][j] = 0;
 				else
-					data[i][j] = 1;
+					(*this)[i][j] = 1;
 			}
 		break;
 	case MATRIX_ZERO:
 		for (uint32_t i = 0; i < len1; i++)
 			for (uint32_t j = 0; j < len2; j++)
 			{
-				data[i][j] = 0;
+				(*this)[i][j] = 0;
 			}
 		break;
 	case MATRIX_ALL_I:
 		for (uint32_t i = 0; i < len1; i++)
 			for (uint32_t j = 0; j < len2; j++)
 			{
-				data[i][j] = 1;
+				(*this)[i][j] = 1;
 			}
+		break;
+	case MATRIX_VOID:
 		break;
 	default:
 		while (1);
@@ -111,116 +88,96 @@ action_matrix::action_matrix(uint32_t len1, uint32_t len2, uint8_t kind)
 
 
 /**
-* @brief  复制函数
-* @attention 这是一个浅复制
+* @brief  ????
+* @attention ???????
 */
 action_matrix::action_matrix(const action_matrix &m)
-	:data(m.data), row(m.row), column(m.column), refcount(m.refcount)
+	: matrix(m.matrix), referCount(m.referCount)
 {
-	if (refcount)
-		refAdd(refcount, 1);
-}
-
-/**
-* @brief  释放矩阵里的动态空间
-* @attention 1,这个函数应该只有在析构函数和内存分配函数中使用，不应该在其它地方使用,
-*            因为既然是通过引用计数实现的GC，那么应该通过C++自身的机构，作用域和析构来实现释放资源，
-*            再就是重新分配对旧资源的处理。
-             2,如果矩阵本身就是通过动态分配内存得到，则需要手动调用该方法来释放空间
-* @param  none
-* @retval None
-*/
-void action_matrix::delete_data(void)
-{
-	if (refcount && refAdd(refcount, -1) == 1) {
-		for (uint32_t i = 0; i < row; i++)
-		{
-			delete[] data[i];
-		}
-		delete[] data;
-		data = 0;
-
-		delete refcount;
-		refcount = 0;
-	}
-}
-
-
-/**
-* @berif 引用增加
-* @param addr:   指向引用计数的指针
-* @param delta:  引用计数减掉的值
-* @retval temp:  减数前的引用计数的值
-*/
-int action_matrix::refAdd(int * addr, int delta)
-{
-	int temp = *addr;
-	*addr += delta;
-	return temp;
+	(*referCount)++;
 }
 /**
-* @berif 析构函数，当引用计数为0时，释放资源
+* @berif 矩阵析构
 */
 action_matrix::~action_matrix()
 {
-	delete_data();
+	//通过引用计数来判断矩阵内容是否需要被释放
+	if (*referCount)
+	{
+		(*referCount)--;
+	}
+	else
+	{
+		delete[] matrix.pData;
+		delete referCount;
+	}
 }
 /**
-* @brief  获得矩阵的某一行某一列的值
-* @attention 越界检查
+* @brief  	 获得矩阵中某一行某一列的值
 * @param  x: 行数
 * @param  y: 列数
 * @retval data[x][y]
 */
 double action_matrix::get_data(uint32_t x, uint32_t y) const
 {
-	if (x < row && y < column)
-		return data[x][y];
-	else
-		return 0.0;
+	return matrix.pData[x*matrix.numCols + y];
 }
 /**
-* @brief  改变矩阵某一行某一列的值
-* @attention 越界检查
+* @brief  改变某一行或者列的值
 * @param  x: 行数
 * @param  y: 列数
 * @retval None
 */
 void action_matrix::set_data(uint32_t x, uint32_t y, double val) const
 {
-	if (x < row && y < column)
-		data[x][y] = val;
+	matrix.pData[x*matrix.numCols + y] = val;
 }
 
 /**
-* @brief  矩阵取值
+* @brief  ????
 * @retval none
 */
-double* const action_matrix::operator [] (size_t i)
+double* action_matrix::operator [] (size_t i) const
 {
-	return data[i];
-}
-const double * action_matrix::operator[](size_t i) const
-{
-	return data[i];
+	return &(matrix.pData[i*matrix.numCols]);
 }
 /**
- * @brief  矩阵赋值
- * @attention 这是一个深度复制
- * @param  this[hiden] : x=y运算中的x
- * @param  y: x=y中的y
- * @retval none
- */
-action_matrix& action_matrix::operator = (const action_matrix& y)
+* @brief  	 矩阵赋值（深度复制）
+* @retval 	 none
+*/
+void action_matrix::operator = (action_matrix& y)
 {
-	for (uint32_t i = 0; i <row; i++)
+	if (this->get_column() == 0 && this->get_row() == 0 && this->matrix.pData == 0 && this->referCount == 0)
 	{
-		for (uint32_t j = 0; j < column; j++)
+		this->matrix.numRows = y.get_row();
+		this->matrix.numCols = y.get_column();
+		this->matrix.pData = new double[matrix.numRows*matrix.numCols];
+		referCount = new int(0);
+	}
+	for (uint32_t i = 0; i <matrix.numRows; i++)
+	{
+		for (uint32_t j = 0; j < matrix.numCols; j++)
 		{
-			data[i][j] = y.get_data(i, j);
+			(*this)[i][j] = y[i][j];
 		}
 	}
-	return *this;
+}
+void action_matrix::operator = (double y)
+{
+	if (this->get_column() == 0 && this->get_row() == 0)
+	{
+		this->matrix.numRows = 1;
+		this->matrix.numCols = 1;
+		this->matrix.pData = new double[matrix.numRows*matrix.numCols];
+		referCount = new int(0);
+	}
+	for (uint32_t i = 0; i <matrix.numRows; i++)
+	{
+		for (uint32_t j = 0; j < matrix.numCols; j++)
+		{
+			(*this)[i][j] = y;
+		}
+	}
 }
 /**
 * @brief  矩阵加法
@@ -567,25 +524,33 @@ void columnTrans(action_matrix& x, uint32_t columnid, uint32_t columnid2, double
 	}
 }
 /**
-* @brief  重载<<输出运算符，矩阵打印自身
-* @param  none
-* @retval none
+* @brief  矩阵求迹（对角线元素之和）
+* @param  action_matrix: 矩阵
+* @retval 迹
 */
-std::ostream &operator<<(std::ostream & os, action_matrix &item)
+double tr(const action_matrix& x)
 {
-	os << '[';
-	for (uint32_t i = 0; i < item.get_row(); ++i) {
-		for (uint32_t j = 0; j < item.get_column(); ++j) {
-			os << item.get_data(i, j);
-			if (item.get_column() != j + 1)
-				os << ',';
-		}
-		if (item.get_row() != i + 1)
-			os << ';' << endl << ' ';
-		else
-			os << ']' << endl;
+	if (x.get_column() != x.get_row())
+	{
+		throw ERR_TRACE;
 	}
-	return os;
+	double re = 0;
+	for (uint32_t i = 0; i<x.get_column(); i++)
+	{
+		re += x.get_data(i, i);
+	}
+	return re;
 }
-
+double abs(const action_matrix& x)
+{
+	double sum = 0;
+	for (uint32_t i = 0; i<x.get_row(); i++)
+	{
+		for (uint32_t j = 0; j<x.get_column(); j++)
+		{
+			sum += x[i][j] * x[i][j];
+		}
+	}
+	return sqrt(sum);
+}
 /************************ (C) COPYRIGHT 2016 ACTION *****END OF FILE****/
