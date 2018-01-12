@@ -64,6 +64,8 @@ class BP_ANN
 	  float study(float *indata, const float *outdata);
 	  float study(const float *indata, const float err,const float *diff);
 	  void printf(void);
+	  void modelTofile(const char* filename);
+	  void modelReadfile(const char* filename);
 
 };
 

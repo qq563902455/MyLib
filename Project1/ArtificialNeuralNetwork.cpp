@@ -17,6 +17,8 @@
 #include "ArtificialNeuralNetwork.h"
 #include <math.h>
 #include <time.h>
+#include <fstream>
+#include <sstream> 
 
 /* Private  typedef -----------------------------------------------------------*/
 /* Private  define ------------------------------------------------------------*/
@@ -741,4 +743,92 @@ void BP_ANN::printf(void)
 		_printf_("br[" << i << "]: " << b_R[i]);
 	}
 }
+
+void BP_ANN::modelTofile(const char* filename) 
+{
+	ofstream outf;
+	outf.open(filename, ios::trunc);
+	for (uint8_t i = 0; i < in_port; i++)
+	{
+		for (uint8_t j = 0; j < hide_layer; j++) 
+		{
+			outf << w_L[i][j] << ' ';
+		}
+	}
+	outf << endl;
+
+	for (uint8_t i = 0; i < hide_layer; i++)
+	{
+		for (uint8_t j = 0; j < out_port; j++)
+		{
+			outf << w_R[i][j] << ' ';
+		}
+	}
+	outf << endl;
+
+	for (uint8_t i = 0; i < hide_layer; i++)
+	{
+		outf << b_L[i] << ' ';
+	}
+	outf << endl;
+	
+	for (uint8_t i = 0; i < out_port; i++)
+	{
+		outf << b_R[i] << ' ';
+	}
+	outf.close();
+}
+void BP_ANN::modelReadfile(const char* filename)
+{
+	ifstream inf(filename);
+	char charline[500];
+	float value;
+	uint32_t count = 0;
+	stringstream is(charline);
+
+	inf.getline(charline, 500);
+	count = 0;
+	is.clear();
+	is.str("");
+	is << charline;
+	while (is >> value)
+	{
+		w_L[count/hide_layer][count%hide_layer]=value;
+		count++;
+	}
+
+	inf.getline(charline, 500);
+	count = 0;
+	is.clear();
+	is.str("");
+	is << charline;
+	while (is >> value)
+	{
+		w_R[count / out_port][count%out_port] = value;
+		count++;
+	}
+
+	inf.getline(charline, 500);
+	count = 0;
+	is.clear();
+	is.str("");
+	is << charline;
+	while (is >> value)
+	{
+		b_L[count] = value;
+		count++;
+	}
+
+	inf.getline(charline, 500);
+	count = 0;
+	is.clear();
+	is.str("");
+	is << charline;
+	while (is >> value)
+	{
+		b_R[count] = value;
+		count++;
+	}
+}
+
 /************************ (C) COPYRIGHT 2016 ACTION *****END OF FILE****/
